@@ -1,0 +1,241 @@
+@prefix map: <#> .
+@prefix db: <> .
+@prefix vocab: <vocab/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix d2rq: <http://www.wiwiss.fu-berlin.de/suhl/bizer/D2RQ/0.1#> .
+@prefix jdbc: <http://d2rq.org/terms/jdbc/> .
+
+#====================================================================================
+@prefix d2r: <http://sites.wiwiss.fu-berlin.de/suhl/bizer/d2r-server/config.rdf#> .
+  
+<> a d2r:Server;
+ 	rdfs:label "D2RQ-DrugCentral Server";
+ 	d2r:baseURI <http://lengua.health.unm.edu:8080/d2rq_drugcentral/>;
+ 	d2r:port 8080;
+ 	d2r:vocabularyIncludeInstances true;
+ 	d2r:sparqlTimeout 300;
+ 	d2r:pageTimeout 5;
+ 	.
+#====================================================================================
+map:database a d2rq:Database;
+	d2rq:jdbcDriver "org.postgresql.Driver";
+	d2rq:jdbcDSN "jdbc:postgresql://localhost/drugcentral";
+	d2rq:username "www";
+	d2rq:password "foobar";
+	.
+
+# Table active_ingredient
+map:active_ingredient a d2rq:ClassMap;
+	d2rq:dataStorage map:database;
+	d2rq:uriPattern "active_ingredient/@@active_ingredient.id@@";
+	d2rq:class vocab:active_ingredient;
+	d2rq:classDefinitionLabel "active_ingredient";
+	.
+map:active_ingredient__label a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:active_ingredient;
+	d2rq:property rdfs:label;
+	d2rq:pattern "active_ingredient #@@active_ingredient.id@@";
+	.
+map:active_ingredient_id a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:active_ingredient;
+	d2rq:property vocab:active_ingredient_id;
+	d2rq:propertyDefinitionLabel "active_ingredient id";
+	d2rq:column "active_ingredient.id";
+	d2rq:join "structures.id => active_ingredient.struct_id";
+	d2rq:datatype xsd:integer;
+	.
+map:active_ingredient_substance_name a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:active_ingredient;
+	d2rq:property vocab:active_ingredient_substance_name;
+	d2rq:propertyDefinitionLabel "active_ingredient substance_name";
+	d2rq:column "active_ingredient.substance_name";
+	d2rq:join "structures.id => active_ingredient.struct_id";
+	.
+map:active_ingredient_struct_id a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:active_ingredient;
+	d2rq:property vocab:active_ingredient_struct_id;
+	d2rq:propertyDefinitionLabel "active_ingredient struct_id";
+	d2rq:column "active_ingredient.struct_id";
+	d2rq:join "structures.id => active_ingredient.struct_id";
+	d2rq:datatype xsd:integer;
+	.
+
+# Table atc
+map:atc a d2rq:ClassMap;
+	d2rq:dataStorage map:database;
+	d2rq:uriPattern "atc/@@atc.id@@";
+	d2rq:class vocab:atc;
+	d2rq:classDefinitionLabel "atc";
+	.
+map:atc__label a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:atc;
+	d2rq:property rdfs:label;
+	d2rq:pattern "atc #@@atc.id@@";
+	.
+map:atc_id a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:atc;
+	d2rq:property vocab:atc_id;
+	d2rq:propertyDefinitionLabel "atc id";
+	d2rq:column "atc.id";
+	d2rq:datatype xsd:integer;
+	.
+map:atc_code a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:atc;
+	d2rq:property vocab:atc_code;
+	d2rq:propertyDefinitionLabel "atc code";
+	d2rq:column "atc.code";
+	.
+map:atc_l1_code a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:atc;
+	d2rq:property vocab:atc_l1_code;
+	d2rq:propertyDefinitionLabel "atc l1_code";
+	d2rq:column "atc.l1_code";
+	.
+map:atc_l1_name a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:atc;
+	d2rq:property vocab:atc_l1_name;
+	d2rq:propertyDefinitionLabel "atc l1_name";
+	d2rq:column "atc.l1_name";
+	.
+map:atc_l2_code a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:atc;
+	d2rq:property vocab:atc_l2_code;
+	d2rq:propertyDefinitionLabel "atc l2_code";
+	d2rq:column "atc.l2_code";
+	.
+map:atc_l2_name a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:atc;
+	d2rq:property vocab:atc_l2_name;
+	d2rq:propertyDefinitionLabel "atc l2_name";
+	d2rq:column "atc.l2_name";
+	.
+map:atc_l3_code a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:atc;
+	d2rq:property vocab:atc_l3_code;
+	d2rq:propertyDefinitionLabel "atc l3_code";
+	d2rq:column "atc.l3_code";
+	.
+map:atc_l3_name a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:atc;
+	d2rq:property vocab:atc_l3_name;
+	d2rq:propertyDefinitionLabel "atc l3_name";
+	d2rq:column "atc.l3_name";
+	.
+map:atc_l4_code a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:atc;
+	d2rq:property vocab:atc_l4_code;
+	d2rq:propertyDefinitionLabel "atc l4_code";
+	d2rq:column "atc.l4_code";
+	.
+map:atc_l4_name a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:atc;
+	d2rq:property vocab:atc_l4_name;
+	d2rq:propertyDefinitionLabel "atc l4_name";
+	d2rq:column "atc.l4_name";
+	.
+
+# Table product
+map:product a d2rq:ClassMap;
+	d2rq:dataStorage map:database;
+	d2rq:uriPattern "product/@@product.id@@";
+	d2rq:class vocab:product;
+	d2rq:classDefinitionLabel "product";
+	.
+map:product__label a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:product;
+	d2rq:property rdfs:label;
+	d2rq:pattern "product #@@product.id@@";
+	.
+map:product_id a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:product;
+	d2rq:property vocab:product_id;
+	d2rq:propertyDefinitionLabel "product id";
+	d2rq:column "product.id";
+	d2rq:datatype xsd:integer;
+	.
+map:product_ndc_product_code a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:product;
+	d2rq:property vocab:product_ndc_product_code;
+	d2rq:propertyDefinitionLabel "product ndc_product_code";
+	d2rq:column "product.ndc_product_code";
+	.
+map:product_generic_name a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:product;
+	d2rq:property vocab:product_generic_name;
+	d2rq:propertyDefinitionLabel "product generic_name";
+	d2rq:column "product.generic_name";
+	.
+map:product_product_name a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:product;
+	d2rq:property vocab:product_product_name;
+	d2rq:propertyDefinitionLabel "product product_name";
+	d2rq:column "product.product_name";
+	.
+
+# Table structures
+map:structures a d2rq:ClassMap;
+	d2rq:dataStorage map:database;
+	d2rq:uriPattern "structures/@@structures.cd_id@@";
+	d2rq:class vocab:structures;
+	d2rq:classDefinitionLabel "structures";
+	.
+map:structures__label a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:structures;
+	d2rq:property rdfs:label;
+	d2rq:pattern "structures #@@structures.cd_id@@";
+	.
+map:structures_cd_id a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:structures;
+	d2rq:property vocab:structures_cd_id;
+	d2rq:propertyDefinitionLabel "structures cd_id";
+	d2rq:column "structures.cd_id";
+	d2rq:datatype xsd:integer;
+	.
+map:structures_cd_smiles a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:structures;
+	d2rq:property vocab:structures_cd_smiles;
+	d2rq:propertyDefinitionLabel "structures cd_smiles";
+	d2rq:column "structures.cd_smiles";
+	.
+map:structures_id a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:structures;
+	d2rq:property vocab:structures_id;
+	d2rq:propertyDefinitionLabel "structures id";
+	d2rq:column "structures.id";
+	d2rq:datatype xsd:integer;
+	.
+map:structures_name a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:structures;
+	d2rq:property vocab:structures_name;
+	d2rq:propertyDefinitionLabel "structures name";
+	d2rq:column "structures.name";
+	.
+
+# Table target_dictionary
+map:target_dictionary a d2rq:ClassMap;
+	d2rq:dataStorage map:database;
+	d2rq:uriPattern "target_dictionary/@@target_dictionary.id@@";
+	d2rq:class vocab:target_dictionary;
+	d2rq:classDefinitionLabel "target_dictionary";
+	.
+map:target_dictionary__label a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:target_dictionary;
+	d2rq:property rdfs:label;
+	d2rq:pattern "target_dictionary #@@target_dictionary.id@@";
+	.
+map:target_dictionary_id a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:target_dictionary;
+	d2rq:property vocab:target_dictionary_id;
+	d2rq:propertyDefinitionLabel "target_dictionary id";
+	d2rq:column "target_dictionary.id";
+	d2rq:datatype xsd:integer;
+	.
+map:target_dictionary_name a d2rq:PropertyBridge;
+	d2rq:belongsToClassMap map:target_dictionary;
+	d2rq:property vocab:target_dictionary_name;
+	d2rq:propertyDefinitionLabel "target_dictionary name";
+	d2rq:column "target_dictionary.name";
+	.
+

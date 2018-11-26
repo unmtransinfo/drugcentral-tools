@@ -1,0 +1,250 @@
+<?xml version="1.0" ?>
+
+<project name="all"
+  basedir="."
+  default="config">
+
+  <property environment="env" />
+  <property name="myname" value="Jeremy J Yang" />
+  <property name="org" value="UNM Translational Informatics Division" />
+  <description>
+	Libraries, applications, and webapps.
+	${myname}, ${org}
+	Note: "ant -Ddebug=true" enables "-Xlint:deprecation".
+  </description>
+
+  <tstamp>
+    <format property="timestamp" pattern="yyyy-MM-dd HH:mm:ss" />
+    <format property="date" pattern="yyyy-MM-dd" />
+    <format property="year" pattern="yyyy" />
+  </tstamp>
+
+  <condition property="isMac">   <equals arg1="${os.name}" arg2="Mac OS X"/> </condition>
+  <condition property="isLinux"> <equals arg1="${os.name}" arg2="Linux"/>    </condition>
+  <condition property="jtgt" value="-target 1.7" else="">
+    <equals arg1="${ant.java.version}" arg2="1.8"/>   
+  </condition>
+  <condition property="jsrc" value="-source 1.7" else="">
+    <equals arg1="${ant.java.version}" arg2="1.8"/>   
+  </condition>
+  <condition property="deprecation" value="-Xlint:deprecation" else="-Xlint:-deprecation">
+    <isset property="debug"/>
+  </condition>
+
+  <target name="configIfLinux" if="isLinux">
+    <!-- echo message="deprecation: ${deprecation}"/ -->
+    <condition property="appdir" value="${user.home}/app" else="/home/app">
+      <equals arg1="${env.HOSTNAME}" arg2="cheminfov.informatics.indiana.edu"/>
+    </condition>
+    <property name="javadir" location="/usr/share/java" />
+    <property name="datadir" location="/home/data" />
+    <presetdef name="jcompile">
+      <javac debug="true" includeantruntime="false" >
+        <compilerarg line="${jsrc}" />
+        <compilerarg line="${jtgt}" />
+        <compilerarg value="${deprecation}" />
+        <compilerarg value="-Xlint:-unchecked" />
+        <compilerarg value="-nowarn" />
+      </javac>
+    </presetdef>
+  </target>
+
+  <target name="configIfMac" if="isMac">
+    <!-- echo message="deprecation: ${deprecation}"/ -->
+    <property name="includeantruntime" value="false" /> <!-- Kludge for Mac -->
+    <property name="appdir" location="/Users/app" />
+    <property name="javadir" location="/usr/share/java" /> <!-- Fix this -->
+    <property name="datadir" location="/Users/data" />
+    <presetdef name="jcompile">
+      <javac debug="true" includeantruntime="false" >
+        <compilerarg line="${jsrc}" />
+        <compilerarg line="${jtgt}" />
+        <compilerarg value="${deprecation}" />
+        <compilerarg value="-Xlint:-unchecked" />
+        <compilerarg value="-nowarn" />
+      </javac>
+    </presetdef>
+  </target>
+
+  <target name="config" depends="configIfMac,configIfLinux"
+   description="Platform-specific configuration." >
+    <property name="d2rq_dir" value="${appdir}/d2rq" />
+    <echo message="OS: ${os.name} ${os.version} [${os.arch}]" />
+    <echo message="java version: ${ant.java.version} (${java.home})"/>
+    <echo message="hostname: ${env.HOSTNAME}" />
+    <echo message="home: ${user.home}" />
+    <echo message="appdir: ${appdir}"/>
+    <echo message="${jsrc} ${jtgt}"/>
+    <echo message="To list targets: ant -p"/>
+    <property name="libdir" location="${basedir}/lib" />
+
+    <!-- dependency jars -->
+    <property name="libj2ee" location="${appdir}/lib/servlet.jar" />
+    <property name="libcos" location="${appdir}/lib/cos.jar" />
+    <property name="libaxis" location="${javadir}/axis/axis.jar" />
+    <property name="libpgsql" location="${appdir}/lib/postgresql.jdbc3.jar" />
+
+    <property name="libcdk" location="${appdir}/lib/cdk-1.5.13-SNAPSHOT.jar" />
+    <property name="libcdk_depict" location="${appdir}/lib/cdk-depict-1.5.13-SNAPSHOT.jar" />
+
+    <property name="jchemdir_preferred" location="${appdir}/chemaxon/jchemsuite" />
+    <property name="jchemdir_default" location="${appdir}/ChemAxon/JChemSuite" />
+    <available file="${jchemdir_preferred}" property="got_chemaxon_preferred"/>
+    <condition property="jchemdir" value="${jchemdir_preferred}" else="${jchemdir_default}">
+      <isset property="got_chemaxon_preferred"/>
+    </condition>
+    <echo message="DEBUG: jchemdir: ${jchemdir}" />
+    <property name="libjchem" location="${jchemdir}/lib/jchem.jar" />
+    <property name="libjchem_sss" location="${jchemdir}/lib/jchem-sss.jar" />
+    <property name="libjchem_reaction" location="${jchemdir}/lib/jchem-reaction.jar" />
+    <property name="libjchem_descriptors" location="${jchemdir}/lib/jchem-descriptors.jar" />
+
+    <!-- homegrown libs -->
+    <property name="lib_unm_http" location="${appdir}/lib/unm_biocomp_http.jar" />
+    <property name="lib_unm_smarts" location="${appdir}/lib/unm_biocomp_smarts.jar" />
+    <property name="lib_unm_depict" location="${appdir}/lib/unm_biocomp_depict.jar" />
+    <property name="lib_unm_db" location="${appdir}/lib/unm_biocomp_db.jar" />
+    <property name="lib_unm_threads" location="${appdir}/lib/unm_biocomp_threads.jar" />
+    <property name="lib_unm_rest" location="${appdir}/lib/unm_biocomp_rest.jar" />
+    <property name="lib_unm_text" location="${appdir}/lib/unm_biocomp_text.jar" />
+    <property name="lib_unm_util" location="${appdir}/lib/unm_biocomp_util.jar" />
+
+    <!-- target jars -->
+    <property name="drugcentral" location="${libdir}/unm_biocomp_drugcentral.jar" />
+  
+    <!-- target wars -->
+    <property name="drugcentral_war" location="${libdir}/drugcentral.war" />
+    <property name="d2rq_drugcentral_war" location="${libdir}/d2rq_drugcentral.war" />
+  
+    <!-- Note that jchem.jar includes many other jars via manifest Class-path, which must be in same dir. -->
+  </target>
+
+  <!-- Libraries -->
+
+  <target name="drugcentral" description="DrugDB client webapp" depends="config">
+    <jcompile srcdir="${basedir}/edu/unm/health/biocomp/drugcentral" includes="*.java" >
+      <classpath>
+        <pathelement path="${basedir}/edu/unm/health/biocomp/drugcentral" />
+        <pathelement location="${lib_unm_cdk}" />
+        <pathelement location="${lib_unm_util}" />
+        <pathelement location="${lib_unm_text}" />
+        <pathelement location="${lib_unm_http}" />
+        <pathelement location="${lib_unm_db}" />
+        <pathelement location="${libcdk}" />
+        <pathelement location="${libcdk_depict}" />
+        <pathelement location="${libcos}" />
+        <pathelement location="${libpgsql}" />
+        <pathelement location="${libj2ee}" />
+      </classpath>
+    </jcompile>
+    <jar destfile="${drugcentral}" >
+      <fileset dir="${basedir}"
+        includes="edu/unm/health/biocomp/drugcentral/*.class" />
+      <manifest>
+        <attribute name="Author" value="${myname}" />
+        <attribute name="Builder" value="${user.name}" />
+      </manifest>
+    </jar>
+  </target>
+  <target name="drugcentral_clean">
+    <delete><fileset dir="${basedir}/edu/unm/health/biocomp/drugcentral" includes="**/*.class"/></delete>
+  </target>
+
+  <target name="drugcentral_war"
+	description="DrugCentral WAR (with dependencies)"
+	depends="config,drugcentral">
+    <war destfile="${drugcentral_war}" webxml="edu/unm/health/biocomp/drugcentral/web.xml">
+      <zipfileset src="${libdir}/unm_biocomp_drugcentral.jar" includes="**/*.class" prefix="WEB-INF/classes" />
+      <lib dir="${appdir}/lib" includes="unm_biocomp_smarts.jar" />
+      <lib dir="${appdir}/lib" includes="unm_biocomp_depict.jar" />
+      <lib dir="${appdir}/lib" includes="unm_biocomp_http.jar" />
+      <lib dir="${appdir}/lib" includes="unm_biocomp_threads.jar" />
+      <lib dir="${appdir}/lib" includes="unm_biocomp_cdk.jar" />
+      <lib dir="${appdir}/lib" includes="unm_biocomp_db.jar" />
+      <lib dir="${appdir}/lib" includes="unm_biocomp_util.jar" />
+      <lib dir="${appdir}/lib" includes="unm_biocomp_text.jar" />
+
+      <classes dir="${basedir}/properties" includes="*.properties" />
+      <zipfileset dir="${basedir}/js" includes="*.js" prefix="js" />
+      <zipfileset dir="${basedir}/css" includes="*.css" prefix="css" />
+      <fileset dir="${basedir}/edu/unm/health/biocomp/drugcentral" includes="index.html" />
+      <fileset dir="${basedir}/html" includes="jsme_win.html" />
+      <zipfileset dir="${basedir}/images" includes="*.*" prefix="images" />
+      <zipfileset dir="/home/www/htdocs/jsme" prefix="jsme" />
+
+      <lib dir="${appdir}/lib" includes="cdk-1.5.13-SNAPSHOT.jar" />
+      <lib dir="${appdir}/lib" includes="cdk-depict-1.5.13-SNAPSHOT.jar" />
+      <lib dir="${appdir}/lib" includes="cos.jar" />
+      <lib dir="${appdir}/lib" includes="postgresql-9.1-903.jdbc3.jar" />
+      <lib dir="${appdir}/lib" includes="commons-logging-1.1.1.jar" />
+      <lib dir="${appdir}/lib" includes="commons-codec-1.6.jar" />
+      <lib dir="${appdir}/lib" includes="guava-16.0.1.jar" />
+      <lib dir="${appdir}/lib" includes="dom4j-1.6.1.jar" />
+      <lib dir="${appdir}/lib" includes="automaton-1.11-8.jar" />
+      <manifest>
+        <attribute name="Author" value="${myname}" />
+        <attribute name="Organization" value="${org}" />
+        <attribute name="Builder" value="${user.name}" />
+        <attribute name="Date" value="${timestamp}" />
+      </manifest>
+    </war>
+    <echo message="DrugCentral WAR, includes local dependencies." />
+    <echo message="File: ${drugcentral_war}" />
+    <echo message="Author: ${myname}" />
+    <echo message="Organization: ${org}" />
+    <echo message="Builder: ${user.name}" />
+    <echo message="Date: ${timestamp}" />
+  </target>
+
+  <target name="d2rq_drugcentral_war"
+	description="D2RQ DrugCentral WAR (with dependencies)"
+	depends="config,drugcentral" >
+    <echo message="d2rq_dir: ${d2rq_dir}"/>
+    <echo message="NOTE: D2RQ JAR should exist. (cd ${d2rq_dir} ; ant jar)"/>
+    <war destfile="${d2rq_drugcentral_war}" needxmlfile="false">
+      <zipfileset
+	dir="${basedir}/edu/unm/health/biocomp/drugcentral/d2rq"
+	includes="web.xml,config.ttl"
+	prefix="WEB-INF" />
+
+	<!-- Adapted from D2RQ build.xml: -->
+	<fileset dir="${d2rq_dir}/webapp/">
+	  <include name="**"/>
+	  <exclude name="WEB-INF"/>
+	</fileset>
+	<lib dir="${d2rq_dir}/lib">
+	  <exclude name="*/*"/><!-- Do not recurse into subdirectories -->
+	</lib>
+	<lib dir="${d2rq_dir}/lib/arq-2.9"/>
+	<lib dir="${d2rq_dir}/lib/hsqldb-2.2.8"/>
+	<lib dir="${d2rq_dir}/lib/jetty-8.1.1">
+	  <exclude name="servlet-api-*.jar"/>
+	</lib>
+	<lib dir="${d2rq_dir}/lib/joseki-3.4.4"/>
+	<lib dir="${d2rq_dir}/lib/logging"/>
+	<lib dir="${d2rq_dir}/lib/velocity-1.7"/>
+	<lib dir="${d2rq_dir}/lib/db-drivers"/>
+	<webinf dir="${d2rq_dir}/webapp/WEB-INF">
+	  <include name="*"/>
+	  <exclude name="templates"/>
+	  <exclude name="web.xml"/>
+	</webinf>
+	<classes dir="${d2rq_dir}/etc"/>
+	<classes dir="${d2rq_dir}/webapp/WEB-INF/templates"/>
+
+    </war>
+  </target>
+
+  <!-- Misc/util targets: -->
+
+  <target name="clean" description="Clean all classes, JARs, WARs and javadocs." >
+    <delete>
+      <fileset dir="${basedir}" includes="**/*.class"/>
+      <fileset dir="${basedir}" includes="**/*.jar"/>
+      <fileset dir="${basedir}" includes="**/*.war"/>
+    </delete>
+    <delete dir="${basedir}/doc" />
+    <delete dir="${basedir}/lib" />
+  </target>
+
+</project>
