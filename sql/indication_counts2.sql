@@ -17,15 +17,13 @@ FROM
 	(
 	SELECT
 		s.id AS "struct_id",
-		COUNT(sno.umls_cui) AS "umls_cui_count"
+		COUNT(omop.umls_cui) AS "umls_cui_count"
 	FROM
-		struct2snomed s2sno,
-		snomedct sno,
+		omop_relationship omop,
 		structures s
 	WHERE
-		s2sno.struct_id = s.id
-		AND s2sno.concept_id = sno.concept_id
-		AND s2sno.relation = 'indication'
+		omop.struct_id = s.id
+		AND omop.relationship_name = 'indication'
 	GROUP BY
 		s.id
 	) t

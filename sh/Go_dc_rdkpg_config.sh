@@ -5,14 +5,14 @@
 ### Ok: rdkit-Release_2015_03_1, Boost 1.61, OpenSUSE Leap 42.3 (early 2018)
 #############################################################################
 #
-DB="drugcentral"
+DBNAME="drugcentral"
 DBSCHEMA="public"
 DBHOST="localhost"
 #
-sudo -u postgres psql -d $DB -c 'create extension rdkit'
+sudo -u postgres psql -d $DBNAME -c 'create extension rdkit'
 #
 ### Create mols table for RDKit structural searching.
-psql -d $DB <<__EOF__
+psql -d $DBNAME <<__EOF__
 SELECT
 	id,
 	mol
@@ -33,28 +33,28 @@ __EOF__
 #	mol_from_smiles(regexp_replace(cd_smiles,E'\\\\s+.*$','')::cstring) AS mol
 #
 #
-psql -d $DB -c "CREATE INDEX molidx ON ${DBSCHEMA}.mols USING gist(mol)"
+psql -d $DBNAME -c "CREATE INDEX molidx ON ${DBSCHEMA}.mols USING gist(mol)"
 #
 #
 ### Add FPs to mols table.
-psql -d $DB -c "ALTER TABLE ${DBSCHEMA}.mols ADD COLUMN fp BFP"
-psql -d $DB -c "ALTER TABLE ${DBSCHEMA}.mols ADD COLUMN mfp BFP"
-psql -d $DB -c "ALTER TABLE ${DBSCHEMA}.mols ADD COLUMN ffp BFP"
-psql -d $DB -c "ALTER TABLE ${DBSCHEMA}.mols ADD COLUMN torsionbv BFP"
-psql -d $DB -c "UPDATE ${DBSCHEMA}.mols SET fp = rdkit_fp(mol)"
-psql -d $DB -c "UPDATE ${DBSCHEMA}.mols SET mfp = morganbv_fp(mol)"
-psql -d $DB -c "UPDATE ${DBSCHEMA}.mols SET ffp = featmorganbv_fp(mol)"
-psql -d $DB -c "UPDATE ${DBSCHEMA}.mols SET torsionbv = torsionbv_fp(mol)"
+psql -d $DBNAME -c "ALTER TABLE ${DBSCHEMA}.mols ADD COLUMN fp BFP"
+psql -d $DBNAME -c "ALTER TABLE ${DBSCHEMA}.mols ADD COLUMN mfp BFP"
+psql -d $DBNAME -c "ALTER TABLE ${DBSCHEMA}.mols ADD COLUMN ffp BFP"
+psql -d $DBNAME -c "ALTER TABLE ${DBSCHEMA}.mols ADD COLUMN torsionbv BFP"
+psql -d $DBNAME -c "UPDATE ${DBSCHEMA}.mols SET fp = rdkit_fp(mol)"
+psql -d $DBNAME -c "UPDATE ${DBSCHEMA}.mols SET mfp = morganbv_fp(mol)"
+psql -d $DBNAME -c "UPDATE ${DBSCHEMA}.mols SET ffp = featmorganbv_fp(mol)"
+psql -d $DBNAME -c "UPDATE ${DBSCHEMA}.mols SET torsionbv = torsionbv_fp(mol)"
 #
-psql -d $DB -c "CREATE INDEX fps_fp_idx ON ${DBSCHEMA}.mols USING gist(fp)"
-psql -d $DB -c "CREATE INDEX fps_mfp_idx ON ${DBSCHEMA}.mols USING gist(mfp)"
-psql -d $DB -c "CREATE INDEX fps_ffp_idx ON ${DBSCHEMA}.mols USING gist(ffp)"
-psql -d $DB -c "CREATE INDEX fps_ttbv_idx ON ${DBSCHEMA}.mols USING gist(torsionbv)"
+psql -d $DBNAME -c "CREATE INDEX fps_fp_idx ON ${DBSCHEMA}.mols USING gist(fp)"
+psql -d $DBNAME -c "CREATE INDEX fps_mfp_idx ON ${DBSCHEMA}.mols USING gist(mfp)"
+psql -d $DBNAME -c "CREATE INDEX fps_ffp_idx ON ${DBSCHEMA}.mols USING gist(ffp)"
+psql -d $DBNAME -c "CREATE INDEX fps_ttbv_idx ON ${DBSCHEMA}.mols USING gist(torsionbv)"
 #
 #
 ### Convenience function:
 #
-psql -d $DB <<__EOF__
+psql -d $DBNAME <<__EOF__
 CREATE OR REPLACE FUNCTION
 	rdk_simsearch(smiles text)
 RETURNS TABLE(id INTEGER, mol mol, similarity double precision) AS

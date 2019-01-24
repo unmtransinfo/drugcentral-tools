@@ -1,24 +1,27 @@
 --
 SELECT
-	COUNT(a.moa)
+	COUNT(a.moa) moa_type_count,
+	a.action_type
 FROM
-	activities AS a,
-	action_type moat
+	act_table_full AS a
 WHERE
-	a.moa = moat.id
-	AND a.moa IS NOT NULL
+	a.moa IS NOT NULL
+GROUP BY
+	a.action_type
+ORDER BY
+	moa_type_count DESC
 	;
 --
-SELECT DISTINCT
-	COUNT(a.moa),
-	moat.action_type
+SELECT
+	COUNT(a.moa) moa_source_count,
+	a.moa_source
 FROM
-	activities AS a,
-	action_type moat
+	act_table_full AS a
 WHERE
-	a.moa = moat.id
-	AND a.moa IS NOT NULL
+	a.moa IS NOT NULL
 GROUP BY
-	moat.action_type
+	a.moa_source
+ORDER BY
+	moa_source_count DESC
 	;
 --
