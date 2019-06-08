@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>unmbiocomputing</groupId>
+  <artifactId>drugcentral-tools</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>DRUGCENTRAL-TOOLS</name>
+  <description>DrugCentral client apps, servlets, libs, and external dependencies ready for deployment via WAR-file.</description>
+  <url>https://github.com/unmtransinfo/drugcentral-tools</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <jdk.version>1.8</jdk.version>
+  </properties>
+
+  <modules>
+    <module>unm_biocomp_drugcentral</module>
+    <module>drugcentral_war</module>
+  </modules>
+
+</project>

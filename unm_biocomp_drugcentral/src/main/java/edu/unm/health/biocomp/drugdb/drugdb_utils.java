@@ -10,6 +10,7 @@ import chemaxon.formats.*; //MolImporter,MolFormatException
 import chemaxon.util.*; //ConnectionHandler
 import chemaxon.jchem.db.*; //JChemSearch,Updater,UpdateHandler
 import chemaxon.jchem.version.*; //VersionInfo
+import com.chemaxon.version.VersionInfo;
 import chemaxon.struc.*; //Molecule
 import chemaxon.sss.search.*; //JChemSearchOptions
 import chemaxon.enumeration.supergraph.SupergraphException;

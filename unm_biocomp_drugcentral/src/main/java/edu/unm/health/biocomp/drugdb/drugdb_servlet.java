@@ -19,6 +19,7 @@ import chemaxon.license.*; //LicenseException,LicenseManager
 import chemaxon.util.*; //ConnectionHandler,MolHandler
 import chemaxon.jchem.db.*; //JChemSearch,Updater,UpdateHandler
 import chemaxon.jchem.version.*; //VersionInfo
+import com.chemaxon.version.VersionInfo;
 import chemaxon.sss.*; //SearchConstants
 import chemaxon.sss.search.*; //JChemSearchOptions
 
