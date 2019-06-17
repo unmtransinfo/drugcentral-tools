@@ -16,9 +16,9 @@ import chemaxon.sss.search.*; //JChemSearchOptions
 import chemaxon.enumeration.supergraph.SupergraphException;
 
 import edu.unm.health.biocomp.util.*; //time_utils
+import edu.unm.health.biocomp.util.db.*; //derby_utils
 import edu.unm.health.biocomp.text.*; //Name,NameList
 import edu.unm.health.biocomp.jchemdb.*; //jchemdb_utils
-import edu.unm.health.biocomp.db.*; //derby_utils
 
 /**	Utilities for DrugDB queries and admin.
 	Note: "SELECT DISTINCT" not allowed with BLOB column.

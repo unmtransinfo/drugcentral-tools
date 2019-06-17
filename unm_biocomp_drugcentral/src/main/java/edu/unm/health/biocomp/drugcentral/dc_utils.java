@@ -18,8 +18,8 @@ import org.openscience.cdk.exception.*; // CDKException, InvalidSmilesException
 import org.openscience.cdk.depict.*; // Depiction, DepictionGenerator
 
 import edu.unm.health.biocomp.util.*; //time_utils
+import edu.unm.health.biocomp.util.db.*; //DBCon
 import edu.unm.health.biocomp.text.*; //Name,NameList
-import edu.unm.health.biocomp.db.*; //DBCon
 
 /**	Utilities for DrugCentral (DC) queries and admin.
 

@@ -24,10 +24,10 @@ import org.openscience.cdk.graph.*; //Cycles
 import org.openscience.cdk.exception.*; // CDKException, InvalidSmilesException
 import org.openscience.cdk.depict.*; // Depiction, DepictionGenerator
 
-import edu.unm.health.biocomp.http.*;
 import edu.unm.health.biocomp.util.*;
+import edu.unm.health.biocomp.util.http.*;
+import edu.unm.health.biocomp.util.db.*; //pg_utils
 import edu.unm.health.biocomp.text.*; //Name,NameList
-import edu.unm.health.biocomp.db.*; //pg_utils
 
 /**	Client for DC queries: name searches, ID and structure lookups.
 	Compound name search ranks COMPOUND name matches above synonyms.

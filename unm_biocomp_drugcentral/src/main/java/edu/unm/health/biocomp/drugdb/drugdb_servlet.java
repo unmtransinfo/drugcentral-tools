@@ -23,10 +23,10 @@ import com.chemaxon.version.VersionInfo;
 import chemaxon.sss.*; //SearchConstants
 import chemaxon.sss.search.*; //JChemSearchOptions
 
-import edu.unm.health.biocomp.http.*;
 import edu.unm.health.biocomp.util.*;
+import edu.unm.health.biocomp.util.http.*;
+import edu.unm.health.biocomp.util.db.*; //derby_utils
 import edu.unm.health.biocomp.text.*; //Name,NameList
-import edu.unm.health.biocomp.db.*; //derby_utils
 import edu.unm.health.biocomp.jchemdb.*; //jchemdb_utils
 
 /**	Client for DrugDB queries: name searches, ID and structure lookups.
