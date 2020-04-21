@@ -2,6 +2,7 @@
 ###
 #
 INAME="drugcentral_db"
+DOCKER_ID_USER="unmtransinfo"
 #
 ###
 if [ ! "$DOCKER_ID_USER" ]; then
