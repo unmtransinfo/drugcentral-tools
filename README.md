@@ -1,10 +1,10 @@
 # `DRUGCENTRAL-TOOLS`
 
-Client tools, including old prototype web app.
+Client tools, including original prototype web app.
+
+___NOT___ required for DrugCentral build.
 
 Docker container of PostgreSql db instance included.
-
-NOTE: This repo ___NOT___ required for DrugCentral build in 2018, but may be useful for further development.
 
 ## Dependencies
 
@@ -19,3 +19,5 @@ mvn clean install
 ```
 
 ## Docker
+
+* [DockerHub:drugcentral\_db](https://hub.docker.com/repository/docker/unmtransinfo/drugcentral_db)
