@@ -1,7 +1,7 @@
 #!/bin/bash
 ###
 #
-INAME="drugcentral"
+INAME="drugcentral_db"
 CNAME="${INAME}_container"
 #
 ###
