@@ -5,32 +5,37 @@
 ###
 set -e
 #
+if [ $(whoami) != "root" ]; then
+	echo "${0} should be run as root or via sudo."
+	exit
+fi
+#
 cwd=$(pwd)
 #
 ORG="unmtransinfo"
 INAME_DB="drugcentral_db"
-VTAG="v0.0.1-SNAPSHOT"
+TAG="latest"
 #
 APPPORT_DB=5432
 DOCKERPORT_DB=5050
 #
 # Note that "run" is equivalent to "create" + "start".
-sudo docker run -dit \
+docker run -dit \
 	--name "${INAME_DB}_container" \
 	-p ${DOCKERPORT_DB}:${APPPORT_DB} \
-	${ORG}/${INAME_DB}:${VTAG}
+	${ORG}/${INAME_DB}:${TAG}
 #
-sudo docker container ls -a
+docker container ls -a
 #
-sudo docker container logs "${INAME_DB}_container"
+docker container logs "${INAME_DB}_container"
 #
 ###
 echo "Sleep while db server starting up..."
 sleep 10
 ###
 # Test db.
-sudo docker exec "${INAME_DB}_container" sudo -u postgres psql -l
-sudo docker exec "${INAME_DB}_container" sudo -u postgres psql -d drugcentral -c "SELECT table_name FROM information_schema.tables WHERE table_schema='public'"
+docker exec "${INAME_DB}_container" sudo -u postgres psql -l
+docker exec "${INAME_DB}_container" sudo -u postgres psql -d drugcentral -c "SELECT table_name FROM information_schema.tables WHERE table_schema='public'"
 ###
 # Test from localhost.
 psql -h localhost -p 5050 -U drugman -l

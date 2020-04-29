@@ -1,8 +1,16 @@
 #!/bin/bash
 ###
 #
+if [ $(whoami) != "root" ]; then
+	echo "${0} should be run as root or via sudo."
+	exit
+fi
+#
 INAME="drugcentral_db"
-DOCKER_ID_USER="unmtransinfo"
+TAG="latest"
+#
+DOCKER_ID_USER="jeremyjyang"
+DOCKER_ORGANIZATION="unmtransinfo"
 #
 ###
 if [ ! "$DOCKER_ID_USER" ]; then
@@ -10,15 +18,11 @@ if [ ! "$DOCKER_ID_USER" ]; then
 	exit
 fi
 #
-set -x
+docker login
 #
-sudo docker images
+docker images
 #
-sudo -E docker login
+docker tag ${INAME}:${TAG} ${DOCKER_ORGANIZATION}/${INAME}:${TAG}
 #
-TAG="v0.0.1-SNAPSHOT"
-#
-sudo -E docker tag ${INAME}:${TAG} $DOCKER_ID_USER/${INAME}:${TAG}
-#
-sudo -E docker push $DOCKER_ID_USER/${INAME}:${TAG}
+docker push ${DOCKER_ORGANIZATION}/${INAME}:${TAG}
 #
