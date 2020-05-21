@@ -21,7 +21,9 @@ if [ ! -e "${cwd}/data" ]; then
 	mkdir ${cwd}/data/
 fi
 #
-cp /home/data/DrugCentral/drugcentral.pgdump ${cwd}/data/
+# pg_dump --no-privileges -Fc -d drugcentral >/home/data/DrugCentral/drugcentral.pgdump 
+cp /home/data/DrugCentral/drugcentral_2018.pgdump ${cwd}/data/
+cp /home/data/DrugCentral/drugcentral_2020.pgdump ${cwd}/data/
 #
 T0=$(date +%s)
 #
@@ -32,7 +34,8 @@ docker build -f ${dockerfile} -t ${INAME}:${TAG} .
 #
 printf "Elapsed time: %ds\n" "$[$(date +%s) - ${T0}]"
 #
-rm -f ${cwd}/data/drugcentral.pgdump
+rm -f ${cwd}/data/drugcentral_2018.pgdump
+rm -f ${cwd}/data/drugcentral_2020.pgdump
 #
 docker images
 #
