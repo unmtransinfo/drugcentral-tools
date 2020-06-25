@@ -1,7 +1,6 @@
 package edu.unm.health.biocomp.drugcentral;
 
 import java.io.*;
-import java.text.*;
 import java.util.*;
 import java.util.regex.*;
 import java.sql.*; //DriverManager,Driver,SQLException,Connection,Statement,ResultSet
@@ -19,6 +18,7 @@ import org.openscience.cdk.depict.*; // Depiction, DepictionGenerator
 
 import edu.unm.health.biocomp.util.*; //time_utils
 import edu.unm.health.biocomp.util.db.*; //DBCon
+import edu.unm.health.biocomp.util.jre.*;
 import edu.unm.health.biocomp.text.*; //Name,NameList
 
 /**	Utilities for DrugCentral (DC) queries and admin.
@@ -35,14 +35,11 @@ import edu.unm.health.biocomp.text.*; //Name,NameList
 	Each product contains 1+ ingredients.  Ingredients belong to one and only
 	one product.  Ingredients are substances which could be a mixture but have
 	a single active moiety, defined in structures table.
-
-	@author Jeremy J Yang
 */
 public class dc_utils
 {
-
   /////////////////////////////////////////////////////////////////////////////
-  private static void DescribeQuery(DCQuery dbquery)
+  public static void DescribeQuery(DCQuery dbquery)
 	throws SQLException
   {
     System.err.println("DBQuery (raw): "+dbquery.toString());
@@ -836,7 +833,7 @@ public class dc_utils
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  private static String ResultProductText(DCProduct product)
+  public static String ResultProductText(DCProduct product)
   {
     String txt=("Product [ID="+product.getID()+"]\n");
     txt+="Name:\t"+product.getProductname()+"\n";
@@ -869,7 +866,7 @@ public class dc_utils
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  private static String ResultCompoundText(DCCompound cpd,boolean full)
+  public static String ResultCompoundText(DCCompound cpd,boolean full)
   {
     String txt=("Compound [ID="+cpd.getDCID()+"]\n");
     txt+=String.format("MF:\t%s\n",cpd.getMolformula());
@@ -927,7 +924,7 @@ public class dc_utils
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  private static String ResultCompoundsText(CompoundList cpds)
+  public static String ResultCompoundsText(CompoundList cpds)
   {
     List<DCCompound> cpds_sorted;
     if (cpds.getType().startsWith("simstr"))
@@ -949,7 +946,7 @@ public class dc_utils
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  private static String ResultCompoundActivitiesText(DCCompound cpd)
+  public static String ResultCompoundActivitiesText(DCCompound cpd)
   {
     String txt="";
     txt+=("Compound ID: "+cpd.getDCID()+"\n");
@@ -995,7 +992,7 @@ public class dc_utils
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  private static String ResultProductsText(ProductList products)
+  public static String ResultProductsText(ProductList products)
   {
     String txt="";
     int i=0;
@@ -1008,199 +1005,5 @@ public class dc_utils
     }
     txt+=("Product count: "+products.size()+"\n");
     return txt;
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  private static String dbname="drugcentral";
-  private static String dbschema="public";
-  private static String dbhost="localhost";
-  private static Integer dbport=5432;
-  private static String dbusr="jjyang";
-  private static String dbpw="assword";
-  private static String ofile="";
-  private static String dbtable=null;
-  private static int verbose=0;
-  private static Boolean describe=false;
-  private static Boolean get_cpd=false;
-  private static Boolean get_cpd_activity=false;
-  private static Boolean search_cpds=false;
-  private static Boolean get_product=false;
-  private static Boolean search_products=false;
-  private static Integer id=null;
-  private static String query=null;
-  private static String extidtype=null;
-
-  /////////////////////////////////////////////////////////////////////////////
-  private static void Help(String msg)
-  {
-    System.out.println(msg+"\n"
-      +"dc_utils - drugcentral utilities\n"
-      +"usage: dc_utils [options]\n"
-      +"\n"
-      +"operation:\n"
-      +"    -describe .............. describe (schema or table)\n"
-      +"  requires ID:\n"
-      +"    -get_cpd ............... get cpd\n"
-      +"    -get_cpd_activity ...... get cpd activity report\n"
-      +"    -get_product ........... get product\n"
-      +"  requires QUERY:\n"
-      +"    -search_cpds ........... search compounds by name or structure\n"
-      +"    -search_products ....... search product names\n"
-      +"\n"
-      +"options:\n"
-      +"    -query QUERY ........... see syntax\n"
-      +"    -id ID ................. internal ID (int)\n"
-      +"    -extidtype IDTYPE ...... external ID type\n"
-      +"    -dbhost DBHOST ......... db host ["+dbhost+"]\n"
-      +"    -dbport DBPORT ......... db port ["+dbport+"]\n"
-      +"    -dbname DBNAME ......... db name ["+dbname+"]\n"
-      +"    -dbschema DBSCHEMA ..... db schema ["+dbschema+"]\n"
-      +"    -dbusr DBUSR ........... db usr ["+dbusr+"]\n"
-      +"    -dbpw DBPW ............. db pw\n"
-      +"    -dbtable TNAME ......... db table\n"
-      +"    -o OFILE ............... output file\n"
-      +"    -v[v] .................. verbose [very]\n"
-      +"    -h ..................... this help\n"
-      +"\n"
-      +"Query syntax:\n"
-      +"  STR[subtxt] ......................... search cpds, substring name match [default]\n"
-      +"  STR[fulltxt] ........................ search cpds, full name match\n"
-      +"  SMILES[substruct] ................... search cpds, Smiles as sub-structure\n"
-      +"  SMILES[fullstruct] .................. search cpds, Smiles as full-structure\n"
-      +"  3386[cidext] ........................ search cpds, external ID, any type\n"
-      +"  CODE[atc1] .......................... search cpds, by ATC Level 1 code\n"
-      +"  CODE[atc2] .......................... search cpds, by ATC Level 2 code\n"
-      +"  CODE[atc3] .......................... search cpds, by ATC Level 3 code\n"
-      +"  CODE[atc4] .......................... search cpds, by ATC Level 4 code\n"
-      +"  CID[cid] ............................ get cpd, by cpd ID (DC unique ID)\n"
-      +"  TID[tid] ............................ get target, by target ID (DC unique ID)\n"
-      +"  PID[pid] ............................ get product, by product ID (DC unique ID)\n"
-      +"\n"
-      +"External ID types:\n"
-      +"  PUBCHEM_CID, ChEMBL_ID, MESH, ACTIVE_MOIETY_UNII, etc.\n"
-      +"\n"
-      +"(For generic utilities use db_utils.sh.)\n"
-      +"\n"
-      +"Examples:\n"
-      +"compound ID: 74 (acetylsalicylic acid)\n"
-      +"compound ID: 1529 (ketorolac)\n"
-      +"compound ID: 1209 (prozac)\n"
-      +"product ID: 685873\n"
-      +"product ID: 646461\n"
-      +"\n"
-      +"Example external IDs:\n"
-      +"ACTIVE_MOIETY_UNII: 01K63SUP8D\n"
-      +"ChEMBL_ID: CHEMBL41\n"
-      +"MESH: D005473\n"
-      +"PUBCHEM_CID: 3386\n"
-      +"RxCUI: 58827\n"
-	);
-    System.exit(1);
-  }
-  /////////////////////////////////////////////////////////////////////////////
-  private static void ParseCommand(String args[])
-  {
-    if (args.length==0) Help("");
-    for (int i=0;i<args.length;++i)
-    {
-      if (args[i].equals("-dbname")) dbname=args[++i];
-      else if (args[i].equals("-dbhost")) dbhost=args[++i];
-      else if (args[i].equals("-dbport")) dbport=Integer.parseInt(args[++i]);
-      else if (args[i].equals("-dbschema")) dbschema=args[++i];
-      else if (args[i].equals("-dbusr")) dbusr=args[++i];
-      else if (args[i].equals("-dbpw")) dbpw=args[++i];
-      else if (args[i].equals("-dbtable")) dbtable=args[++i];
-      else if (args[i].equals("-o")) ofile=args[++i];
-      else if (args[i].equals("-describe")) describe=true;
-      else if (args[i].equals("-get_cpd")) get_cpd=true;
-      else if (args[i].equals("-get_cpd_activity")) get_cpd_activity=true;
-      else if (args[i].equals("-get_product")) get_product=true;
-      else if (args[i].equals("-search_cpds")) search_cpds=true;
-      else if (args[i].equals("-search_products")) search_products=true;
-      else if (args[i].equals("-id")) id=Integer.parseInt(args[++i]);
-      else if (args[i].equals("-query")) query=args[++i];
-      else if (args[i].equals("-extidtype")) extidtype=args[++i];
-      else if (args[i].equals("-v")) verbose=1;
-      else if (args[i].equals("-vv")) verbose=2;
-      else if (args[i].equals("-h")) Help("");
-      else Help("Unknown option: "+args[i]);
-    }
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  public static void main(String[] args)
-	throws IOException,SQLException
-  {
-    ParseCommand(args);
-    java.util.Date t_0 = new java.util.Date();
-    DBCon dbcon = null;
-    try { dbcon = new DBCon("postgres",dbhost,dbport,dbname,dbusr,dbpw); }
-    catch (SQLException e) { Help("Connection failed:"+e.getMessage()); }
-    catch (Exception e) { Help("Connection failed:"+e.getMessage()); }
-
-    System.err.println("===");
-    if (dbcon==null)
-      Help("Connection failed: "+dbname);
-    else
-      System.err.println("Connection ok: "+dbname+"@"+dbhost);
-
-    DCQuery dbquery = (query==null)? null : new DCQuery(query.trim());
-    if (verbose>0 && dbquery!=null) DescribeQuery(dbquery);
-
-    StringBuilder log = new StringBuilder();
-
-    if (describe)
-    {
-      System.out.println(DBDescribeTxt(dbcon));
-    }
-    else if (get_cpd)
-    {
-      if (id==null) Help("ERROR: -get requires -id.");
-      DCCompound cpd = GetCompound(dbcon,new DCQuery(String.format("%d[cid]",id)),log);
-      if (cpd!=null)
-        System.out.println(ResultCompoundText(cpd,true));
-      else System.out.println("No compound found.");
-    }
-    else if (search_cpds)
-    {
-      if (dbquery==null) Help("ERROR: -search requires -query.");
-      if (dbquery.getText().isEmpty()) { Help("ERROR: empty query string."); }
-      else if (dbquery.toString().length()<3) { Help("ERROR: query must be 3+ characters."); }
-      if (extidtype!=null) dbquery.setExtIdType(extidtype);
-      CompoundList cpds = null;
-      try { cpds = SearchCompounds(dbcon,dbquery,log); }
-      catch (Exception e) { System.err.println(e.toString()); }
-      if (cpds!=null && cpds.size()>0) System.out.println(ResultCompoundsText(cpds));
-      else System.out.println("No compounds found.");
-    }
-    else if (get_cpd_activity)
-    {
-      if (id==null) Help("ERROR: -get requires -id.");
-      DCCompound cpd = GetCompound(dbcon,new DCQuery(String.format("%d[cid]",id)),log);
-      ResultSet rset = GetCompoundActivities(dbcon,cpd.getDCID());
-      ResultSet2CompoundActivities(rset,cpd);
-      System.out.println(ResultCompoundActivitiesText(cpd));
-    }
-    else if (get_product)
-    {
-      if (id==null) Help("ERROR: -get requires -id.");
-      DCProduct product = GetProduct(dbcon,new DCQuery(String.format("%d[pid]",id)),log);
-      if (product!=null)
-        System.out.println(ResultProductText(product));
-    }
-    else if (search_products)
-    {
-      if (dbquery==null) Help("ERROR: -search requires -query.");
-      if (dbquery.getText().isEmpty()) { Help("ERROR: empty query string."); }
-      else if (dbquery.toString().length()<3) { Help("ERROR: query must be 3+ characters."); }
-      ProductList products = SearchProducts(dbcon,dbquery,log);
-      if (products!=null) System.out.println(ResultProductsText(products));
-    }
-    else
-    {
-      Help("ERROR: no operation specified.");
-    }
-    if (verbose>0) System.err.println(log.toString());
-    System.err.println("Elapsed time: "+time_utils.TimeDeltaStr(t_0,new java.util.Date()));
   }
 }

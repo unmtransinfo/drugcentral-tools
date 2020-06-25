@@ -24,3 +24,29 @@ mvn clean install
 
 * [DockerHub:drugcentral\_db](https://hub.docker.com/repository/docker/unmtransinfo/drugcentral_db)
 * See: `Go_DockerBuild_Db.sh`, `Go_DockerPush_Db.sh`, `Go_DockerRun.sh`
+
+## Deploying `DRUGCENTRAL_WAR`
+
+Ok for Tomcat v8/v9 also, apparently.
+
+Copy your ChemAxon license to `/drugcentral_war/src/main/webapp/.chemaxon/license.cxl` 
+for inclusion in the WAR.
+
+```
+mvn --projects drugcentral_war tomcat7:deploy
+```
+
+or
+
+```
+mvn --projects drugcentral_war tomcat7:redeploy
+```
+
+## Testing with Jetty
+
+<http://localhost:8080/convert>, etc.
+
+```
+mvn --projects drugcentral_war jetty:run
+```
+

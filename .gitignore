@@ -6,3 +6,4 @@
 data
 R/*/*.tsv.gz
 R/*/*.RData
+**/license.cxl

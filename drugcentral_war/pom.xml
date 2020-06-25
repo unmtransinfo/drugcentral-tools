@@ -8,10 +8,9 @@
     <artifactId>drugcentral-tools</artifactId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
-
+  <name>DRUGCENTRAL_WAR</name>
   <artifactId>drugcentral_war</artifactId>
   <packaging>war</packaging>
-  <name>DRUGCENTRAL_WAR</name>
   <description>Maven sub-module to generate WAR-file.</description>
 
   <dependencies>
@@ -36,7 +35,19 @@
       <plugin>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-maven-plugin</artifactId>
-        <version>9.4.18-SNAPSHOT</version>
+        <!-- version>9.4.18-SNAPSHOT</version -->
+        <version>9.4.28.v20200408</version>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.tomcat.maven</groupId>
+        <artifactId>tomcat7-maven-plugin</artifactId> <!-- Ok for v8/v9? -->
+        <version>2.2</version>
+        <configuration>
+          <url>http://localhost:8080/manager/text</url>
+          <server>TomcatServer</server> <!-- Credentials in settings.xml. -->
+          <path>/drugcentral</path>
+        </configuration>
       </plugin>
     </plugins>
   </build>

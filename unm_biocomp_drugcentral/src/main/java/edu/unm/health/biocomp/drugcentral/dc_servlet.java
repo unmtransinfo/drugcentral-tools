@@ -65,8 +65,9 @@ public class dc_servlet extends HttpServlet
   private static File LOGFILE=null;
   private static String color1="#EEEEEE";
   private static int DEPSZ=120;
-  private static String mol2img_servleturl="";
+  private static String MOL2IMG_SERVLETURL="";
   private DBCon DBCON=null; //non-static, one per object
+  private static String PROXY_PREFIX=null;      // configured in web.xml
 
   /////////////////////////////////////////////////////////////////////////////
   public void doPost(HttpServletRequest request,HttpServletResponse response)
@@ -95,14 +96,14 @@ public class dc_servlet extends HttpServlet
     }
 
     // main logic:
-    ArrayList<String> cssincludes = new ArrayList<String>(Arrays.asList("biocomp.css"));
-    ArrayList<String> jsincludes = new ArrayList<String>(Arrays.asList("biocomp.js","ddtip.js"));
+    ArrayList<String> cssincludes = new ArrayList<String>(Arrays.asList(PROXY_PREFIX+CONTEXTPATH+"/css/biocomp.css"));
+    ArrayList<String> jsincludes = new ArrayList<String>(Arrays.asList(PROXY_PREFIX+CONTEXTPATH+"/js/biocomp.js",PROXY_PREFIX+CONTEXTPATH+"/js/ddtip.js"));
     boolean ok=Initialize(request,mrequest);
     if (!ok)
     {
       response.setContentType("text/html");
       out=response.getWriter();
-      out.println(HtmUtils.HeaderHtm(APPNAME, jsincludes, cssincludes, JavaScript(), "", color1, request, "tomcat"));
+      out.println(HtmUtils.HeaderHtm(APPNAME, jsincludes, cssincludes, JavaScript(), "", color1, request));
       out.println(HtmUtils.FooterHtm(errors,true));
       return;
     }
@@ -110,7 +111,7 @@ public class dc_servlet extends HttpServlet
     {
       response.setContentType("text/html");
       out=response.getWriter();
-      out.println(HtmUtils.HeaderHtm(APPNAME, jsincludes, cssincludes, JavaScript(), "", color1, request, "tomcat"));
+      out.println(HtmUtils.HeaderHtm(APPNAME, jsincludes, cssincludes, JavaScript(), "", color1, request));
       out.println(HelpHtm());
       out.println(HtmUtils.FooterHtm(errors,true));
     }
@@ -125,7 +126,7 @@ public class dc_servlet extends HttpServlet
     {
       response.setContentType("text/html");
       out=response.getWriter();
-      out.println(HtmUtils.HeaderHtm(APPNAME, jsincludes, cssincludes, JavaScript(), "", color1, request, "tomcat"));
+      out.println(HtmUtils.HeaderHtm(APPNAME, jsincludes, cssincludes, JavaScript(), "", color1, request));
       java.util.Date t_0 = new java.util.Date();
 
       DCQuery dbquery = new DCQuery(params.getVal("query").trim()); //All queries begin here.
@@ -137,7 +138,7 @@ public class dc_servlet extends HttpServlet
         qhtm+=("<TR><TD VALIGN=\"top\"><H2>Query:</H2></TD>\n");
         qhtm+=("<TD VALIGN=\"middle\" BGCOLOR=\"white\"><DIV STYLE=\"font-size:14px; font-family:monospace; font-weight:bold\">");
         if (dbquery.getType().matches("^.*struct$"))
-          qhtm+=(HtmUtils.Smi2ImgHtm(dbquery.getText(),"",120,150,mol2img_servleturl,true,4,"go_zoom_smi2img"));
+          qhtm+=(HtmUtils.Smi2ImgHtm(dbquery.getText(),"",120,150,MOL2IMG_SERVLETURL,true,4,"go_zoom_smi2img"));
         else
           qhtm+=(dbquery.toString());
         qhtm+=("</DIV></TD>");
@@ -210,22 +211,22 @@ public class dc_servlet extends HttpServlet
     params = new HttpParams();
 
     String logo_htm="<TABLE CELLSPACING=5 CELLPADDING=5><TR><TD>";
-    String imghtm=("<IMG BORDER=0 SRC=\"/tomcat"+CONTEXTPATH+"/images/biocomp_logo_only.gif\">");
+    String imghtm=("<IMG BORDER=0 SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/biocomp_logo_only.gif\">");
     String tiphtm=(APPNAME+" web app from UNM Translational Informatics.");
     String href=("http://medicine.unm.edu/informatics/");
     logo_htm+=(HtmUtils.HtmTipper(imghtm,tiphtm,href,200,"white"));
     logo_htm+="</TD><TD>";
-    imghtm=("<IMG BORDER=\"0\" HEIGHT=\"60\" SRC=\"/tomcat"+CONTEXTPATH+"/images/cdk_logo.png\">");
+    imghtm=("<IMG BORDER=\"0\" HEIGHT=\"60\" SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/cdk_logo.png\">");
     tiphtm=("CDK");
     href=("http://sourceforge.net/projects/cdk/");
     logo_htm+=(HtmUtils.HtmTipper(imghtm,tiphtm,href,200,"white"));
     logo_htm+="</TD><TD>";
-    imghtm=("<IMG BORDER=0 HEIGHT=\"60\" SRC=\"/tomcat"+CONTEXTPATH+"/images/rdkit_logo.png\">");
+    imghtm=("<IMG BORDER=0 HEIGHT=\"60\" SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/rdkit_logo.png\">");
     tiphtm=("RDKit");
     href=("http://www.rdkit.org/");
     logo_htm+=(HtmUtils.HtmTipper(imghtm,tiphtm,href,200,"white"));
     logo_htm+="</TD><TD>";
-    imghtm=("<IMG BORDER=0 HEIGHT=\"40\" SRC=\"/tomcat"+CONTEXTPATH+"/images/JSME_logo.png\">");
+    imghtm=("<IMG BORDER=0 HEIGHT=\"40\" SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/JSME_logo.png\">");
     tiphtm=("JSME Molecular Editor");
     href=("http://peter-ertl.com/jsme/");
     logo_htm+=(HtmUtils.HtmTipper(imghtm,tiphtm,href,200,"white"));
@@ -285,7 +286,7 @@ public class dc_servlet extends HttpServlet
       calendar.get(Calendar.HOUR_OF_DAY),
       calendar.get(Calendar.MINUTE));
 
-    mol2img_servleturl=("http://"+SERVERNAME+"/tomcat"+CONTEXTPATH+"/mol2img");
+    MOL2IMG_SERVLETURL=(PROXY_PREFIX+CONTEXTPATH+"/mol2img");
 
     errors.add("CDK version: "+CDK.getVersion());
 
@@ -389,9 +390,9 @@ public class dc_servlet extends HttpServlet
     else if (cpd.getAtomCount()==0)
       imghtm=("<I>(MOLECULE UNAVAILABLE)</I>\n");
     else if (cpd.getMolfile()!=null)
-      imghtm=HtmUtils.Molfile2ImgHtm(cpd.getMolfile(),depictopts,120,150,mol2img_servleturl,true,4,"go_zoom_mdl2img");
+      imghtm=HtmUtils.Molfile2ImgHtm(cpd.getMolfile(),depictopts,120,150,MOL2IMG_SERVLETURL,true,4,"go_zoom_mdl2img");
     else
-      imghtm=((cpd.getSmiles()!=null)?HtmUtils.Smi2ImgHtm(cpd.getSmiles(),depictopts,120,150,mol2img_servleturl,true,4,"go_zoom_smi2img"):"");
+      imghtm=((cpd.getSmiles()!=null)?HtmUtils.Smi2ImgHtm(cpd.getSmiles(),depictopts,120,150,MOL2IMG_SERVLETURL,true,4,"go_zoom_smi2img"):"");
 
     thtm+=("<TR><TD ALIGN=\"right\"></TD><TD BGCOLOR=\"white\" ALIGN=\"center\">"+imghtm+"</TD></TR>\n");
     thtm+=("<TR><TD ALIGN=\"right\">MF</TD><TD BGCOLOR=\"white\">"+cpd.getMolformula()+"</TD></TR>\n");
@@ -575,7 +576,7 @@ public class dc_servlet extends HttpServlet
     String thtm=("<TABLE WIDTH=\"100%\" CELLSPACING=2 CELLPADDING=2>\n");
     if (!product.hasLargeCompound())
     {
-      imghtm=((product.getMixtureSmiles()!=null)?HtmUtils.Smi2ImgHtm(product.getMixtureSmiles(),depictopts,180,320,mol2img_servleturl,true,4,"go_zoom_smi2img"):"");
+      imghtm=((product.getMixtureSmiles()!=null)?HtmUtils.Smi2ImgHtm(product.getMixtureSmiles(),depictopts,180,320,MOL2IMG_SERVLETURL,true,4,"go_zoom_smi2img"):"");
       thtm+=("<TR><TD></TD><TD ALIGN=\"center\" BGCOLOR=\"white\">"+imghtm+"</TD></TR>\n");
     }
     thtm+=("<TR><TD ALIGN=\"right\">Name:</TD><TD BGCOLOR=\"white\">"+product.getProductname()+"</TD></TR>\n");
@@ -596,9 +597,9 @@ public class dc_servlet extends HttpServlet
       else if (cpd.getAtomCount()==0)
         imghtm=("<I>(MOLECULE UNAVAILABLE)</I>\n");
       else if (cpd.getMolfile()!=null)
-        imghtm=HtmUtils.Molfile2ImgHtm(cpd.getMolfile(),depictopts,120,150,mol2img_servleturl,true,4,"go_zoom_mdl2img");
+        imghtm=HtmUtils.Molfile2ImgHtm(cpd.getMolfile(),depictopts,120,150,MOL2IMG_SERVLETURL,true,4,"go_zoom_mdl2img");
       else
-        imghtm=((cpd.getSmiles()!=null)?HtmUtils.Smi2ImgHtm(cpd.getSmiles(),depictopts,120,150,mol2img_servleturl,true,4,"go_zoom_smi2img"):"");
+        imghtm=((cpd.getSmiles()!=null)?HtmUtils.Smi2ImgHtm(cpd.getSmiles(),depictopts,120,150,MOL2IMG_SERVLETURL,true,4,"go_zoom_smi2img"):"");
       thtm2+="<TR><TD COLSPAN=\"2\" ALIGN=\"center\" BGCOLOR=\"white\">"+imghtm+"</TD></TR>\n";
       thtm2+="<TR><TD ALIGN=\"right\" VALIGN=\"top\">MF</TD><TD BGCOLOR=\"white\">"+cpd.getMolformula()+"</TD></TR>\n";
       thtm2+="<TR><TD ALIGN=\"right\" VALIGN=\"top\">MWT</TD><TD BGCOLOR=\"white\">"+String.format("%.1f",cpd.getMwt())+"</TD></TR>\n";
@@ -685,9 +686,9 @@ public class dc_servlet extends HttpServlet
       else if (cpd.getAtomCount()==0)
         imghtm=("<I>(MOLECULE UNAVAILABLE)</I>\n");
       else if (cpd.getMolfile()!=null)
-        imghtm=HtmUtils.Molfile2ImgHtm(cpd.getMolfile(),depictopts,120,150,mol2img_servleturl,true,4,"go_zoom_mdl2img");
+        imghtm=HtmUtils.Molfile2ImgHtm(cpd.getMolfile(),depictopts,120,150,MOL2IMG_SERVLETURL,true,4,"go_zoom_mdl2img");
       else
-        imghtm=((cpd.getSmiles()!=null)?HtmUtils.Smi2ImgHtm(cpd.getSmiles(),depictopts,120,150,mol2img_servleturl,true,4,"go_zoom_smi2img"):"");
+        imghtm=((cpd.getSmiles()!=null)?HtmUtils.Smi2ImgHtm(cpd.getSmiles(),depictopts,120,150,MOL2IMG_SERVLETURL,true,4,"go_zoom_smi2img"):"");
       rhtm+=("<TD BGCOLOR=\"white\" ALIGN=\"center\" VALIGN=\"top\">"+imghtm+"<BR>\n"+cpd_id+"</TD>");
 
       //Names:
@@ -828,7 +829,7 @@ public class dc_servlet extends HttpServlet
     "<P>\n"+
     "<I><B>ALPHA RELEASE:</B> This user interface is a prototype only.  However, the database is in production mode, comprehensive, high quality, and actively maintained.</I>\n"+
     "<P>\n"+
-    "<CENTER><IMG BORDER=0 SRC=\"/tomcat"+CONTEXTPATH+"/images/drugcentral_logo.png\"></CENTER>"+
+    "<CENTER><IMG BORDER=0 SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/drugcentral_logo.png\"></CENTER>"+
     "<H2>Introduction</H2>\n"+
     APPNAME+" is a research database developed at the University of New Mexico Translational Informatics Division.\n"+
     "The database is designed to contain all compounds approved for use as human therapeutics.\n"+
@@ -846,7 +847,7 @@ public class dc_servlet extends HttpServlet
     "active moiety (compound) and quantity, responsible for the theraputic activity.\n"+
     "<P>\n"+
     "<TABLE WIDTH=\"100%\"><TR><TD ALIGN=\"center\">"+
-    "<IMG BORDER=0 SRC=\"/tomcat"+CONTEXTPATH+"/images/dc_schema.png\">"+
+    "<IMG BORDER=0 SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/dc_schema.png\">"+
     "</TD></TR></TABLE>\n"+
     "<P>\n"+
     "<H2>Accurate Chemical Structures</H2>\n"+
@@ -940,13 +941,10 @@ public class dc_servlet extends HttpServlet
     super.init(conf);
     CONTEXT=this.getServletContext();	// inherited method
     CONTEXTPATH=CONTEXT.getContextPath();
-    //CONFIG=conf;
     APPNAME=conf.getInitParameter("APPNAME");
     if (APPNAME==null) APPNAME=this.getServletName();
     UPLOADDIR=conf.getInitParameter("UPLOADDIR");
-    if (UPLOADDIR==null)
-      throw new ServletException("Please supply UPLOADDIR parameter");
-
+    if (UPLOADDIR==null) throw new ServletException("Please supply UPLOADDIR parameter");
     DBHOST=conf.getInitParameter("DBHOST");
     if (DBHOST==null) DBHOST="localhost";
     DBPORT=Integer.parseInt(conf.getInitParameter("DBPORT"));
@@ -956,24 +954,19 @@ public class dc_servlet extends HttpServlet
     DBSCHEMA=conf.getInitParameter("DBSCHEMA");
     if (DBSCHEMA==null) DBSCHEMA="public";
     DBUSR=conf.getInitParameter("DBUSR");
-    if (DBUSR==null) DBUSR="jjyang";
+    if (DBUSR==null) DBUSR="drugman";
     DBPW=conf.getInitParameter("DBPW");
-    if (DBPW==null) DBPW="assword";
-
+    if (DBPW==null) DBPW="dosage";
+    PROXY_PREFIX=((conf.getInitParameter("PROXY_PREFIX")!=null)?conf.getInitParameter("PROXY_PREFIX"):"");
     JSMEURL=conf.getInitParameter("JSMEURL");
-    if (JSMEURL==null) { JSMEURL="/tomcat/"+APPNAME+"/jsme_win.html"; }
-
+    if (JSMEURL==null) { JSMEURL=PROXY_PREFIX+APPNAME+"/jsme_win.html"; }
     LOGDIR=conf.getInitParameter("LOGDIR")+CONTEXTPATH;
-    if (LOGDIR==null) LOGDIR="/usr/local/tomcat/logs"+CONTEXTPATH;
+    if (LOGDIR==null) LOGDIR="/tmp"+CONTEXTPATH+"_logs";
     try { N_MAX=Integer.parseInt(conf.getInitParameter("N_MAX")); }
     catch (Exception e) { N_MAX=100; }
-
     try { String s=conf.getInitParameter("DEBUG"); if (s.equalsIgnoreCase("TRUE")) DEBUG=true; }
     catch (Exception e) { DEBUG=false; }
-
-    if (DBCON!=null)
-      CONTEXT.log("Connection ok: "+DBNAME);
-
+    if (DBCON!=null) CONTEXT.log("Connection ok: "+DBNAME);
   }
   /////////////////////////////////////////////////////////////////////////////
   public void doGet(HttpServletRequest request,HttpServletResponse response)
