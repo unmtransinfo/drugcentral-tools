@@ -52,7 +52,7 @@ public class dc_app
   private static String dbpw="dosage";
   private static String ofile="";
   private static String dbtable=null;
-  private static int verbose=0;
+  private static Integer verbose=0;
   private static Boolean describe=false;
   private static Boolean get_cpd=false;
   private static Boolean get_cpd_activity=false;
@@ -99,12 +99,14 @@ public class dc_app
     String HELPHEADER =  "DrugCentral utilities";
     Options opts = new Options();
     OptionGroup operations = new OptionGroup();
-    operations.addOption(new Option("describe", false, "Describe (schema or table)."));
-    operations.addOption(new Option("get_cpd", false, "Get cpd"));
-    operations.addOption(new Option("get_cpd_activity", false, "Get cpd activity report"));
-    operations.addOption(new Option("get_product", false, "Get product"));
-    operations.addOption(new Option("search_cpds", false, "Search compounds by name or structure"));
-    operations.addOption(new Option("search_products", false, "Search product names"));
+    operations.addOption(new Option("describe", false, "Describe (schema or table)."))
+      .addOption(new Option("get_cpd", false, "Get cpd"))
+      .addOption(new Option("get_cpd_activity", false, "Get cpd activity report"))
+      .addOption(new Option("get_product", false, "Get product"))
+      .addOption(new Option("search_cpds", false, "Search compounds by name or structure"))
+      .addOption(new Option("search_products", false, "Search product names"))
+      .addOption(new Option("h", "help", false, "Show verbose help."));
+    operations.setRequired(true);
     opts.addOptionGroup(operations);
 
     opts.addOption(Option.builder("query").hasArg().desc("See syntax").build());
@@ -117,11 +119,9 @@ public class dc_app
     opts.addOption(Option.builder("dbusr").hasArg().desc("Db user").build());
     opts.addOption(Option.builder("dbpw").hasArg().desc("Db pw").build());
     opts.addOption(Option.builder("param_file").hasArg().desc("Db parameter file ["+param_file+"]").build());
-
-    opts.addOption(Option.builder("id").type(Integer.class).hasArg().desc("internal ID (int)").build());
+    opts.addOption(Option.builder("id").longOpt("identifier").type(Integer.class).hasArg().desc("Internal ID (int)").build());
     opts.addOption(Option.builder("o").hasArg().argName("OFILE").desc("Output file").build());
     opts.addOption("v", "verbose", false, "Verbose.");
-    opts.addOption("h", "help", false, "Show this help.");
     HelpFormatter helper = new HelpFormatter();
     CommandLineParser clip = new PosixParser();
     CommandLine clic = null;
@@ -131,8 +131,13 @@ public class dc_app
       helper.printHelp(APPNAME, HELPHEADER, opts, e.getMessage(), true);
       System.exit(0);
     }
-
-    if (clic.hasOption("id")) { id = (Integer)(clic.getParsedOptionValue("id")); }
+    if (clic.hasOption("help")) {
+      helper.printHelp(APPNAME, HELPHEADER, opts, HELPFOOTER, true);
+      System.exit(0);
+    }
+    if (clic.hasOption("id")) {
+      System.err.println("DEBUG: clic.getParsedOptionValue(id): "+clic.getParsedOptionValue("id"));
+      id = (Integer)(clic.getParsedOptionValue("id")); }
     if (clic.hasOption("extidtype")) extidtype = clic.getOptionValue("extidtype");
     if (clic.hasOption("query")) query = clic.getOptionValue("query");
     if (clic.hasOption("o")) ofile = clic.getOptionValue("o");
@@ -145,59 +150,41 @@ public class dc_app
     if (clic.hasOption("dbtable")) dbtable = clic.getOptionValue("dbtable");
     if (clic.hasOption("param_file")) param_file = clic.getOptionValue("param_file");
     if (clic.hasOption("v")) { verbose = 1; }
-    if (clic.hasOption("h")) {
-      helper.printHelp(APPNAME, HELPHEADER, opts, "", true);
-      System.exit(0);
-    }
 
     if (verbose>0) System.err.println("JRE_VERSION: "+JREUtils.JREVersion());
 
     java.util.Date t_0 = new java.util.Date();
 
-    // Loading the YAML params file 
     InputStream iStream = new FileInputStream(new File(param_file));
-    YAMLFactory factory = new YAMLFactory();
-    YAMLParser  parser  = factory.createParser(iStream);
-    parser.nextToken(); // START_OBJECT
-    while (parser.nextToken() != null)
+    YAMLParser parser = (new YAMLFactory()).createParser(iStream);
+    for (parser.nextToken(); parser.nextToken()!=null;)
     {
-      String name = parser.getCurrentName();
-      if (name == null) break;
-      parser.nextToken(); // get value for this "name"
-      switch (name)
+      String key = parser.getCurrentName();
+      if (key == null) break;
+      parser.nextToken(); // get value for this "key"
+      switch (key)
       {
         case "DBHOST":
-          dbhost = parser.getText();
-          break;
+          dbhost = parser.getText(); break;
         case "DBPORT":
-          dbport = parser.getIntValue();
-          break;
+          dbport = parser.getIntValue(); break;
         case "DBNAME":
-          dbname = parser.getText();
-          break;
+          dbname = parser.getText(); break;
         case "DBUSR":
-          dbusr = parser.getText();
-          break;
+          dbusr = parser.getText(); break;
         case "DBPW":
-          dbpw = parser.getText();
-          break;
+          dbpw = parser.getText(); break;
       }
-      System.err.println("DEBUG: param "+name+" = "+parser.getText());
     }
 
     DBCon dbcon = null;
     try { dbcon = new DBCon("postgres", dbhost, dbport, dbname, dbusr, dbpw); }
-    catch (Exception e) { helper.printHelp(APPNAME, HELPHEADER, opts, "Connection failed:"+e.getMessage()); System.exit(1); }
+    catch (Exception e) { helper.printHelp(APPNAME, HELPHEADER, opts, e.getMessage()); System.exit(1); }
 
-    System.err.println("===");
-    if (dbcon==null) {
-      helper.printHelp(APPNAME, HELPHEADER, opts, "Connection failed: "+dbname);
-      System.exit(1);
-    }
-    else
+    if (verbose>0)
       System.err.println("Connection ok: "+dbname+"@"+dbhost);
 
-    DCQuery dbquery = (query==null)? null : new DCQuery(query.trim());
+    DCQuery dbquery = (query==null) ? null : new DCQuery(query.trim());
     if (verbose>0 && dbquery!=null) dc_utils.DescribeQuery(dbquery);
 
     StringBuilder log = new StringBuilder();
@@ -209,9 +196,9 @@ public class dc_app
     else if (clic.hasOption("get_cpd"))
     {
       if (id==null) { helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: -get requires -id."); System.exit(1); }
-      DCCompound cpd = dc_utils.GetCompound(dbcon,new DCQuery(String.format("%d[cid]",id)),log);
+      DCCompound cpd = dc_utils.GetCompound(dbcon, new DCQuery(String.format("%d[cid]", id)), log);
       if (cpd!=null)
-        System.out.println(dc_utils.ResultCompoundText(cpd,true));
+        System.out.println(dc_utils.ResultCompoundText(cpd, true));
       else System.out.println("No compound found.");
     }
     else if (clic.hasOption("search_cpds"))
