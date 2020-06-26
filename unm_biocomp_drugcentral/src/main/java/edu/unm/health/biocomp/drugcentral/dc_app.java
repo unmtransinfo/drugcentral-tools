@@ -8,6 +8,8 @@ import java.sql.*; //DriverManager,Driver,SQLException,Connection,Statement,Resu
 import org.apache.commons.cli.*; // CommandLine, CommandLineParser, HelpFormatter, OptionBuilder, Options, ParseException, PosixParser
 import org.apache.commons.cli.Option.*; // Builder
 
+import com.fasterxml.jackson.dataformat.yaml.*; //YAMLFactory, YAMLParser
+
 import org.openscience.cdk.*; // CDK,DefaultChemObjectBuilder,AtomContainer,ChemFile
 import org.openscience.cdk.io.*; //SDFWriter
 import org.openscience.cdk.tools.manipulator.*; //ChemFileManipulator, AtomContainerManipulator
@@ -60,6 +62,7 @@ public class dc_app
   private static Integer id=null;
   private static String query=null;
   private static String extidtype=null;
+  private static String param_file = System.getProperty("user.home")+"/.drugcentral.yaml";
 
   public static void main(String[] args) throws Exception
   {
@@ -113,6 +116,7 @@ public class dc_app
     opts.addOption(Option.builder("dbtable").hasArg().desc("Db table").build());
     opts.addOption(Option.builder("dbusr").hasArg().desc("Db user").build());
     opts.addOption(Option.builder("dbpw").hasArg().desc("Db pw").build());
+    opts.addOption(Option.builder("param_file").hasArg().desc("Db parameter file ["+param_file+"]").build());
 
     opts.addOption(Option.builder("id").type(Integer.class).hasArg().desc("internal ID (int)").build());
     opts.addOption(Option.builder("o").hasArg().argName("OFILE").desc("Output file").build());
@@ -139,6 +143,7 @@ public class dc_app
     if (clic.hasOption("dbusr")) dbusr = clic.getOptionValue("dbusr");
     if (clic.hasOption("dbpw")) dbpw = clic.getOptionValue("dbpw");
     if (clic.hasOption("dbtable")) dbtable = clic.getOptionValue("dbtable");
+    if (clic.hasOption("param_file")) param_file = clic.getOptionValue("param_file");
     if (clic.hasOption("v")) { verbose = 1; }
     if (clic.hasOption("h")) {
       helper.printHelp(APPNAME, HELPHEADER, opts, "", true);
@@ -148,14 +153,47 @@ public class dc_app
     if (verbose>0) System.err.println("JRE_VERSION: "+JREUtils.JREVersion());
 
     java.util.Date t_0 = new java.util.Date();
+
+    // Loading the YAML params file 
+    InputStream iStream = new FileInputStream(new File(param_file));
+    YAMLFactory factory = new YAMLFactory();
+    YAMLParser  parser  = factory.createParser(iStream);
+    parser.nextToken(); // START_OBJECT
+    while (parser.nextToken() != null)
+    {
+      String name = parser.getCurrentName();
+      if (name == null) break;
+      parser.nextToken(); // get value for this "name"
+      switch (name)
+      {
+        case "DBHOST":
+          dbhost = parser.getText();
+          break;
+        case "DBPORT":
+          dbport = parser.getIntValue();
+          break;
+        case "DBNAME":
+          dbname = parser.getText();
+          break;
+        case "DBUSR":
+          dbusr = parser.getText();
+          break;
+        case "DBPW":
+          dbpw = parser.getText();
+          break;
+      }
+      System.err.println("DEBUG: param "+name+" = "+parser.getText());
+    }
+
     DBCon dbcon = null;
-    try { dbcon = new DBCon("postgres",dbhost,dbport,dbname,dbusr,dbpw); }
-    catch (SQLException e) { helper.printHelp(APPNAME, HELPHEADER, opts, "Connection failed:"+e.getMessage()); }
-    catch (Exception e) { helper.printHelp(APPNAME, HELPHEADER, opts, "Connection failed:"+e.getMessage()); }
+    try { dbcon = new DBCon("postgres", dbhost, dbport, dbname, dbusr, dbpw); }
+    catch (Exception e) { helper.printHelp(APPNAME, HELPHEADER, opts, "Connection failed:"+e.getMessage()); System.exit(1); }
 
     System.err.println("===");
-    if (dbcon==null)
+    if (dbcon==null) {
       helper.printHelp(APPNAME, HELPHEADER, opts, "Connection failed: "+dbname);
+      System.exit(1);
+    }
     else
       System.err.println("Connection ok: "+dbname+"@"+dbhost);
 
@@ -170,7 +208,7 @@ public class dc_app
     }
     else if (clic.hasOption("get_cpd"))
     {
-      if (id==null) helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: -get requires -id.");
+      if (id==null) { helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: -get requires -id."); System.exit(1); }
       DCCompound cpd = dc_utils.GetCompound(dbcon,new DCQuery(String.format("%d[cid]",id)),log);
       if (cpd!=null)
         System.out.println(dc_utils.ResultCompoundText(cpd,true));
@@ -178,11 +216,11 @@ public class dc_app
     }
     else if (clic.hasOption("search_cpds"))
     {
-      if (dbquery==null) helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: -search requires -query.");
+      if (dbquery==null) { helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: -search requires -query."); System.exit(1); }
       if (dbquery.getText().isEmpty()) { helper.printHelp(APPNAME, HELPHEADER,
-opts, "ERROR: empty query string."); }
+opts, "ERROR: empty query string."); System.exit(1); }
       else if (dbquery.toString().length()<3) { helper.printHelp(APPNAME,
-HELPHEADER, opts, "ERROR: query must be 3+ characters."); }
+HELPHEADER, opts, "ERROR: query must be 3+ characters."); System.exit(1); }
       if (extidtype!=null) dbquery.setExtIdType(extidtype);
       CompoundList cpds = null;
       try { cpds = dc_utils.SearchCompounds(dbcon,dbquery,log); }
@@ -192,7 +230,7 @@ HELPHEADER, opts, "ERROR: query must be 3+ characters."); }
     }
     else if (clic.hasOption("get_cpd_activity"))
     {
-      if (id==null) helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: -get requires -id.");
+      if (id==null) {helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: -get requires -id."); System.exit(1); }
       DCCompound cpd = dc_utils.GetCompound(dbcon,new DCQuery(String.format("%d[cid]",id)),log);
       ResultSet rset = dc_utils.GetCompoundActivities(dbcon,cpd.getDCID());
       dc_utils.ResultSet2CompoundActivities(rset,cpd);
@@ -200,24 +238,23 @@ HELPHEADER, opts, "ERROR: query must be 3+ characters."); }
     }
     else if (clic.hasOption("get_product"))
     {
-      if (id==null) helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: -get requires -id.");
+      if (id==null) { helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: -get requires -id."); System.exit(1); }
       DCProduct product = dc_utils.GetProduct(dbcon,new DCQuery(String.format("%d[pid]",id)),log);
       if (product!=null)
         System.out.println(dc_utils.ResultProductText(product));
     }
     else if (clic.hasOption("search_products"))
     {
-      if (dbquery==null) helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: -search requires -query.");
-      if (dbquery.getText().isEmpty()) { helper.printHelp(APPNAME, HELPHEADER,
-opts, "ERROR: empty query string."); }
-      else if (dbquery.toString().length()<3) { helper.printHelp(APPNAME,
-HELPHEADER, opts, "ERROR: query must be 3+ characters."); }
+      if (dbquery==null) { helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: -search requires -query."); System.exit(1); }
+      if (dbquery.getText().isEmpty()) { helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: empty query string."); System.exit(1); }
+      else if (dbquery.toString().length()<3) { helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: query must be 3+ characters."); System.exit(1); }
       ProductList products = dc_utils.SearchProducts(dbcon,dbquery,log);
       if (products!=null) System.out.println(dc_utils.ResultProductsText(products));
     }
     else
     {
       helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: no operation specified.");
+      System.exit(1);
     }
     if (verbose>0) System.err.println(log.toString());
     System.err.println("Elapsed time: "+time_utils.TimeDeltaStr(t_0,new java.util.Date()));
