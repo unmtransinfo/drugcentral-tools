@@ -4,8 +4,8 @@
   xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd"
   version="2.4">
 
-  <display-name>DrugDB Web App</display-name>
-  <description>DrugDB Web App</description>
+  <display-name>DrugCentral Web App</display-name>
+  <description>DrugCentral Web App</description>
 
   <servlet>
     <servlet-name>drugcentral</servlet-name>
@@ -14,17 +14,17 @@
     <init-param><param-name>APPNAME</param-name>
       <param-value>DrugCentral</param-value></init-param>
     <init-param><param-name>DBHOST</param-name><!-- PostgreSql -->
-      <param-value>localhost</param-value></init-param>
+      <param-value>unmtid-dbs.net</param-value></init-param>
     <init-param><param-name>DBNAME</param-name><!-- PostgreSql -->
       <param-value>drugcentral</param-value></init-param>
     <init-param><param-name>DBSCHEMA</param-name><!-- PostgreSql -->
       <param-value>public</param-value></init-param>
     <init-param><param-name>DBPORT</param-name>
-      <param-value>5432</param-value></init-param>
+      <param-value>5433</param-value></init-param>
     <init-param><param-name>DBUSR</param-name>
-      <param-value>www</param-value></init-param>
+      <param-value>drugman</param-value></init-param>
     <init-param><param-name>DBPW</param-name>
-      <param-value>foobar</param-value></init-param>
+      <param-value>dosage</param-value></init-param>
     <init-param><param-name>UPLOADDIR</param-name>
       <param-value>/tmp</param-value></init-param>
     <init-param><param-name>N_MAX</param-name>
@@ -34,11 +34,11 @@
     <init-param><param-name>MAX_POST_SIZE</param-name>
       <param-value>10485760</param-value></init-param>
     <init-param><param-name>SCRATCHDIR</param-name>
-      <param-value>${catalina.home}/webapps/drugcentral/scratch</param-value></init-param>
+      <param-value>/tmp/scratch</param-value></init-param>
     <init-param><param-name>LOGDIR</param-name>
       <param-value>${catalina.home}/logs</param-value></init-param>
-    <init-param><param-name>JSMEURL</param-name>
-      <param-value>/tomcat/drugcentral/jsme_win.html</param-value></init-param>
+    <init-param> <param-name>PROXY_PREFIX</param-name>
+      <param-value>/tomcat</param-value></init-param>
     <init-param><param-name>DEBUG</param-name>
       <param-value>true</param-value></init-param>
   </servlet>

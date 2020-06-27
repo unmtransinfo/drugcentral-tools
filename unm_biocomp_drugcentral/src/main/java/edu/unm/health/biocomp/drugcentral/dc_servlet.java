@@ -1,5 +1,4 @@
-package edu.unm.health.biocomp.drugcentral;
-
+package edu.unm.health.biocomp.drugcentral; 
 import java.io.*;
 import java.net.*; //URLEncoder,InetAddress
 import java.text.*;
@@ -32,8 +31,6 @@ import edu.unm.health.biocomp.text.*; //Name,NameList
 /**	Client for DC queries: name searches, ID and structure lookups.
 	Compound name search ranks COMPOUND name matches above synonyms.
 	Sub-structure hits sorted by size.  Similarity-structure hits sorted by similiarity.
-
-	@author Jeremy J Yang
 */
 public class dc_servlet extends HttpServlet
 {
@@ -49,7 +46,6 @@ public class dc_servlet extends HttpServlet
   private static String DBUSR=null;	// configured in web.xml
   private static String DBPW=null;	// configured in web.xml
   private static int N_MAX=100; // configured in web.xml
-  private static String JSMEURL=null; // configured in web.xml
   private static Boolean DEBUG=false; // configured in web.xml
   private static ServletContext CONTEXT=null;
   //private static ServletConfig CONFIG=null;
@@ -66,6 +62,7 @@ public class dc_servlet extends HttpServlet
   private static String color1="#EEEEEE";
   private static int DEPSZ=120;
   private static String MOL2IMG_SERVLETURL="";
+  private static String JSMEURL=null;
   private DBCon DBCON=null; //non-static, one per object
   private static String PROXY_PREFIX=null;      // configured in web.xml
 
@@ -152,60 +149,60 @@ public class dc_servlet extends HttpServlet
         if (dbquery.getText().isEmpty()) { outputs.add("ERROR: empty query string."); return ; }
         else if (dbquery.toString().length()<3) { outputs.add("ERROR: query must be 3+ characters."); return; }
 
-        PrintWriter out_log=new PrintWriter(new BufferedWriter(new FileWriter(LOGFILE,true)));
+        PrintWriter out_log=new PrintWriter(new BufferedWriter(new FileWriter(LOGFILE, true)));
         StringBuilder querylog = new StringBuilder();
 
         if (dbquery.getType().equalsIgnoreCase("cid")) //Query type: Get compound
         {
           DCCompound cpd = null;
           try {
-            cpd=dc_utils.GetCompound(DBCON,dbquery,querylog);
+            cpd = dc_utils.GetCompound(DBCON, dbquery, querylog);
             if (params.isChecked("activityreport"))
             {
-              ResultSet rset = dc_utils.GetCompoundActivities(DBCON,cpd.getDCID());
-              dc_utils.ResultSet2CompoundActivities(rset,cpd);
+              ResultSet rset = dc_utils.GetCompoundActivities(DBCON, cpd.getDCID());
+              dc_utils.ResultSet2CompoundActivities(rset, cpd);
             }
           }
           catch (SQLException e) { errors.add("ERROR: "+e.getMessage()); }
           if (params.isChecked("activityreport"))
             outputs.add(ResultCompoundActivityHtm(cpd));
           else
-            outputs.add(ResultCompoundHtm(cpd,response));
+            outputs.add(ResultCompoundHtm(cpd, response));
         }
         else if (dbquery.getType().equalsIgnoreCase("pid")) //Query type: Get product
         {
           DCProduct prd = null;
-          try { prd=dc_utils.GetProduct(DBCON,dbquery,querylog); }
+          try { prd = dc_utils.GetProduct(DBCON, dbquery, querylog); }
           catch (SQLException e) { errors.add("ERROR: "+e.getMessage()); }
-          outputs.add(ResultProductHtm(prd,response));
+          outputs.add(ResultProductHtm(prd, response));
         }
         else //Query type: Search compounds
         {
           CompoundList cpds = null;
-          try { cpds=dc_utils.SearchCompounds(DBCON,dbquery,querylog); }
+          try { cpds = dc_utils.SearchCompounds(DBCON, dbquery, querylog); }
           catch (Exception e) { errors.add("ERROR: "+e.toString()); }
-          outputs.add(ResultCompoundsHtm(cpds,response,N_MAX));
+          outputs.add(ResultCompoundsHtm(cpds, response, N_MAX));
         }
         out.println(HtmUtils.OutputHtm(outputs));
-        out_log.printf("%s\t%s\t\"%s\"\n",DATESTR,REMOTEHOST,dbquery.toString());
+        out_log.printf("%s\t%s\t\"%s\"\n", DATESTR, REMOTEHOST, dbquery.toString());
         out_log.close();
         if (params.isChecked("verbose"))
           if (querylog.length()>0)
             errors.add("<PRE>"+querylog.toString()+"</PRE>");
       }
       if (params.isChecked("verbose"))
-        errors.add("Elapsed time: "+time_utils.TimeDeltaStr(t_0,new java.util.Date()));
+        errors.add("Elapsed time: "+time_utils.TimeDeltaStr(t_0, new java.util.Date()));
 
-      out.println(HtmUtils.FooterHtm(errors,true));
+      out.println(HtmUtils.FooterHtm(errors, true));
     }
   }
   /////////////////////////////////////////////////////////////////////////////
   /**	Called once per request.
   */
-  private boolean Initialize(HttpServletRequest request,MultipartRequest mrequest)
-      throws IOException,ServletException
+  private boolean Initialize(HttpServletRequest request, MultipartRequest mrequest)
+      throws IOException, ServletException
   {
-    SERVLETNAME=this.getServletName();
+    SERVLETNAME = this.getServletName();
     outputs = new ArrayList<String>();
     errors = new ArrayList<String>();
     params = new HttpParams();
@@ -213,23 +210,23 @@ public class dc_servlet extends HttpServlet
     String logo_htm="<TABLE CELLSPACING=5 CELLPADDING=5><TR><TD>";
     String imghtm=("<IMG BORDER=0 SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/biocomp_logo_only.gif\">");
     String tiphtm=(APPNAME+" web app from UNM Translational Informatics.");
-    String href=("http://medicine.unm.edu/informatics/");
-    logo_htm+=(HtmUtils.HtmTipper(imghtm,tiphtm,href,200,"white"));
+    String href=("http://datascience.unm.edu/");
+    logo_htm+=(HtmUtils.HtmTipper(imghtm, tiphtm, href, 200, "white"));
     logo_htm+="</TD><TD>";
     imghtm=("<IMG BORDER=\"0\" HEIGHT=\"60\" SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/cdk_logo.png\">");
     tiphtm=("CDK");
-    href=("http://sourceforge.net/projects/cdk/");
-    logo_htm+=(HtmUtils.HtmTipper(imghtm,tiphtm,href,200,"white"));
+    href=("https://cdk.github.io/");
+    logo_htm+=(HtmUtils.HtmTipper(imghtm, tiphtm, href, 200, "white"));
     logo_htm+="</TD><TD>";
     imghtm=("<IMG BORDER=0 HEIGHT=\"60\" SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/rdkit_logo.png\">");
     tiphtm=("RDKit");
-    href=("http://www.rdkit.org/");
-    logo_htm+=(HtmUtils.HtmTipper(imghtm,tiphtm,href,200,"white"));
+    href=("http://rdkit.org/");
+    logo_htm+=(HtmUtils.HtmTipper(imghtm, tiphtm, href, 200, "white"));
     logo_htm+="</TD><TD>";
     imghtm=("<IMG BORDER=0 HEIGHT=\"40\" SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/JSME_logo.png\">");
     tiphtm=("JSME Molecular Editor");
     href=("http://peter-ertl.com/jsme/");
-    logo_htm+=(HtmUtils.HtmTipper(imghtm,tiphtm,href,200,"white"));
+    logo_htm+=(HtmUtils.HtmTipper(imghtm, tiphtm, href, 200, "white"));
     logo_htm+="</TD></TR></TABLE>";
     errors.add("<CENTER>"+logo_htm+"</CENTER>");
 
@@ -248,7 +245,7 @@ public class dc_servlet extends HttpServlet
     {
       try { LOGFILE.createNewFile(); }
       catch (IOException e) { errors.add("ERROR: Cannot create log file:"+e.getMessage()); return false; }
-      LOGFILE.setWritable(true,true);
+      LOGFILE.setWritable(true, true);
       PrintWriter out_log=new PrintWriter(LOGFILE);
       out_log.println("date\tip\tquery"); 
       out_log.flush();
@@ -266,15 +263,15 @@ public class dc_servlet extends HttpServlet
       ++n_lines;
       String[] fields=Pattern.compile("\\t").split(line);
       if (n_lines==2) 
-        calendar.set(Integer.parseInt(fields[0].substring(0,4)),
-               Integer.parseInt(fields[0].substring(4,6))-1,
-               Integer.parseInt(fields[0].substring(6,8)),
-               Integer.parseInt(fields[0].substring(8,10)),
-               Integer.parseInt(fields[0].substring(10,12)),0);
+        calendar.set(Integer.parseInt(fields[0].substring(0, 4)),
+               Integer.parseInt(fields[0].substring(4, 6))-1,
+               Integer.parseInt(fields[0].substring(6, 8)),
+               Integer.parseInt(fields[0].substring(8, 10)),
+               Integer.parseInt(fields[0].substring(10, 12)), 0);
     }
     if (n_lines>1)
     {
-      DateFormat df=DateFormat.getDateInstance(DateFormat.FULL,Locale.US);
+      DateFormat df=DateFormat.getDateInstance(DateFormat.FULL, Locale.US);
       errors.add("Since "+df.format(calendar.getTime())+", times used: "+(n_lines-1));
     }
 
@@ -286,19 +283,19 @@ public class dc_servlet extends HttpServlet
       calendar.get(Calendar.HOUR_OF_DAY),
       calendar.get(Calendar.MINUTE));
 
-    MOL2IMG_SERVLETURL=(PROXY_PREFIX+CONTEXTPATH+"/mol2img");
+    MOL2IMG_SERVLETURL = (PROXY_PREFIX+CONTEXTPATH+"/mol2img");
+    JSMEURL = (PROXY_PREFIX+CONTEXTPATH+"/jsme_win.html");
 
     errors.add("CDK version: "+CDK.getVersion());
 
     for (Enumeration e=request.getParameterNames(); e.hasMoreElements(); ) //GET
     {
       String key=(String)e.nextElement();
-      if (request.getParameter(key)!=null) params.setVal(key,request.getParameter(key));
+      if (request.getParameter(key)!=null) params.setVal(key, request.getParameter(key));
     }
-    if (DEBUG) params.setVal("verbose","TRUE");
+    if (DEBUG) params.setVal("verbose", "TRUE");
 
-
-    try { DBCON = new DBCon("postgres",DBHOST,DBPORT,DBNAME,DBUSR,DBPW); }
+    try { DBCON = new DBCon("postgres", DBHOST, DBPORT, DBNAME, DBUSR, DBPW); }
     catch (Exception e) { errors.add("Connection failed:"+e.toString()); }
 
     if (DBCON!=null)
@@ -323,9 +320,9 @@ public class dc_servlet extends HttpServlet
     for (Enumeration e=mrequest.getParameterNames(); e.hasMoreElements(); ) //POST
     {
       String key=(String)e.nextElement();
-      if (mrequest.getParameter(key)!=null) params.setVal(key,mrequest.getParameter(key));
+      if (mrequest.getParameter(key)!=null) params.setVal(key, mrequest.getParameter(key));
     }
-    if (DEBUG) params.setVal("verbose","TRUE");
+    if (DEBUG) params.setVal("verbose", "TRUE");
 
     return true;
   }
@@ -342,7 +339,7 @@ public class dc_servlet extends HttpServlet
     return htm;
   }
   /////////////////////////////////////////////////////////////////////////////
-  private static String FormHtm(MultipartRequest mrequest,HttpServletResponse response)
+  private static String FormHtm(MultipartRequest mrequest, HttpServletResponse response)
       throws IOException
   {
     String htm=
@@ -366,7 +363,7 @@ public class dc_servlet extends HttpServlet
     +("<P>\n")
     +("<SMALL>Examples: ");
 
-    for (String drugname: new String[]{"aspirin","hydrocortisone","ketorolac","prozac","ranitidine","rosuvastatin","tamoxifen","verapamil"})
+    for (String drugname: new String[]{"aspirin", "hydrocortisone", "ketorolac", "prozac", "ranitidine", "rosuvastatin", "tamoxifen", "verapamil"})
       htm+=("&nbsp;<A HREF=\""+response.encodeURL(SERVLETNAME)+"?query="+drugname+"[fulltxt]\">"+drugname+"</A>\n");
 
     htm+=(
@@ -378,7 +375,7 @@ public class dc_servlet extends HttpServlet
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  private static String ResultCompoundHtm(DCCompound cpd,HttpServletResponse response)
+  private static String ResultCompoundHtm(DCCompound cpd, HttpServletResponse response)
   {
     if (cpd==null) return ("<H2>Compound not found.</H2>");
     String htm=("<H2>Compound ["+cpd.getDCID()+"]</H2>");
@@ -390,13 +387,13 @@ public class dc_servlet extends HttpServlet
     else if (cpd.getAtomCount()==0)
       imghtm=("<I>(MOLECULE UNAVAILABLE)</I>\n");
     else if (cpd.getMolfile()!=null)
-      imghtm=HtmUtils.Molfile2ImgHtm(cpd.getMolfile(),depictopts,120,150,MOL2IMG_SERVLETURL,true,4,"go_zoom_mdl2img");
+      imghtm=HtmUtils.Molfile2ImgHtm(cpd.getMolfile(), depictopts, 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_mdl2img");
     else
-      imghtm=((cpd.getSmiles()!=null)?HtmUtils.Smi2ImgHtm(cpd.getSmiles(),depictopts,120,150,MOL2IMG_SERVLETURL,true,4,"go_zoom_smi2img"):"");
+      imghtm=((cpd.getSmiles()!=null)?HtmUtils.Smi2ImgHtm(cpd.getSmiles(), depictopts, 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_smi2img"):"");
 
     thtm+=("<TR><TD ALIGN=\"right\"></TD><TD BGCOLOR=\"white\" ALIGN=\"center\">"+imghtm+"</TD></TR>\n");
     thtm+=("<TR><TD ALIGN=\"right\">MF</TD><TD BGCOLOR=\"white\">"+cpd.getMolformula()+"</TD></TR>\n");
-    thtm+=("<TR><TD ALIGN=\"right\">MWT</TD><TD BGCOLOR=\"white\">"+String.format("%.2f",cpd.getMwt())+"</TD></TR>\n");
+    thtm+=("<TR><TD ALIGN=\"right\">MWT</TD><TD BGCOLOR=\"white\">"+String.format("%.2f", cpd.getMwt())+"</TD></TR>\n");
     if (!cpd.isLarge())
       thtm+=("<TR><TD ALIGN=\"right\">Smiles</TD><TD BGCOLOR=\"white\">"+cpd.getSmiles()+"</TD></TR>\n");
 
@@ -532,7 +529,7 @@ public class dc_servlet extends HttpServlet
       rhtm+=("<TD "+(got_moa?"ROWSPAN=\"2\" ":"")+"ALIGN=\"right\">"+(i_act)+"</TD>\n");
       rhtm+=("<TD "+(got_moa?"ROWSPAN=\"2\" ":"")+"BGCOLOR=\""+bgcolor+"\">"+tgt.getName()+" ["+tgt.getID()+"]</TD>\n");
       rhtm+=("<TD "+(got_moa?"ROWSPAN=\"2\" ":"")+"BGCOLOR=\""+bgcolor+"\">"+act.getType()+"</TD>\n");
-      rhtm+=("<TD "+(got_moa?"ROWSPAN=\"2\" ":"")+"BGCOLOR=\""+bgcolor+"\"> "+(String.valueOf(act.getRelation()).matches("[><]")?act.getRelation():"")+String.format("%.3f%s",act.getValue(),((act.getUnit()!=null)?act.getUnit():""))+"</TD>\n");
+      rhtm+=("<TD "+(got_moa?"ROWSPAN=\"2\" ":"")+"BGCOLOR=\""+bgcolor+"\"> "+(String.valueOf(act.getRelation()).matches("[><]")?act.getRelation():"")+String.format("%.3f%s",act.getValue(), ((act.getUnit()!=null)?act.getUnit():""))+"</TD>\n");
       if (got_moa)
         rhtm+=("<TD ROWSPAN=\"2\" BGCOLOR=\""+bgcolor+"\"><B>MOA: "+act.getMoaType()+"</B></TD>\n");
       else
@@ -567,7 +564,7 @@ public class dc_servlet extends HttpServlet
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  private static String ResultProductHtm(DCProduct product,HttpServletResponse response)
+  private static String ResultProductHtm(DCProduct product, HttpServletResponse response)
   {
     if (product==null) return ("<H2>Product not found.</H2>");
     String htm=("<H2>Product ["+product.getID()+"]</H2>");
@@ -576,7 +573,7 @@ public class dc_servlet extends HttpServlet
     String thtm=("<TABLE WIDTH=\"100%\" CELLSPACING=2 CELLPADDING=2>\n");
     if (!product.hasLargeCompound())
     {
-      imghtm=((product.getMixtureSmiles()!=null)?HtmUtils.Smi2ImgHtm(product.getMixtureSmiles(),depictopts,180,320,MOL2IMG_SERVLETURL,true,4,"go_zoom_smi2img"):"");
+      imghtm=((product.getMixtureSmiles()!=null)?HtmUtils.Smi2ImgHtm(product.getMixtureSmiles(), depictopts, 180, 320, MOL2IMG_SERVLETURL, true, 4, "go_zoom_smi2img"):"");
       thtm+=("<TR><TD></TD><TD ALIGN=\"center\" BGCOLOR=\"white\">"+imghtm+"</TD></TR>\n");
     }
     thtm+=("<TR><TD ALIGN=\"right\">Name:</TD><TD BGCOLOR=\"white\">"+product.getProductname()+"</TD></TR>\n");
@@ -597,12 +594,12 @@ public class dc_servlet extends HttpServlet
       else if (cpd.getAtomCount()==0)
         imghtm=("<I>(MOLECULE UNAVAILABLE)</I>\n");
       else if (cpd.getMolfile()!=null)
-        imghtm=HtmUtils.Molfile2ImgHtm(cpd.getMolfile(),depictopts,120,150,MOL2IMG_SERVLETURL,true,4,"go_zoom_mdl2img");
+        imghtm=HtmUtils.Molfile2ImgHtm(cpd.getMolfile(), depictopts, 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_mdl2img");
       else
-        imghtm=((cpd.getSmiles()!=null)?HtmUtils.Smi2ImgHtm(cpd.getSmiles(),depictopts,120,150,MOL2IMG_SERVLETURL,true,4,"go_zoom_smi2img"):"");
+        imghtm=((cpd.getSmiles()!=null)?HtmUtils.Smi2ImgHtm(cpd.getSmiles(), depictopts, 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_smi2img"):"");
       thtm2+="<TR><TD COLSPAN=\"2\" ALIGN=\"center\" BGCOLOR=\"white\">"+imghtm+"</TD></TR>\n";
       thtm2+="<TR><TD ALIGN=\"right\" VALIGN=\"top\">MF</TD><TD BGCOLOR=\"white\">"+cpd.getMolformula()+"</TD></TR>\n";
-      thtm2+="<TR><TD ALIGN=\"right\" VALIGN=\"top\">MWT</TD><TD BGCOLOR=\"white\">"+String.format("%.1f",cpd.getMwt())+"</TD></TR>\n";
+      thtm2+="<TR><TD ALIGN=\"right\" VALIGN=\"top\">MWT</TD><TD BGCOLOR=\"white\">"+String.format("%.1f", cpd.getMwt())+"</TD></TR>\n";
       thtm2+="<!-- IID = "+ingr.getID()+" -->\n";
       thtm2+="<TR><TD ALIGN=\"right\" VALIGN=\"top\">CID</TD><TD BGCOLOR=\"white\">"+cpd.getDCID()+"</TD></TR>\n";
       thtm2+="<TR><TD ALIGN=\"right\" VALIGN=\"top\">Active moiety name</TD><TD BGCOLOR=\"white\">"+ingr.getActivemoietyName()+"</TD></TR>\n";
@@ -644,14 +641,14 @@ public class dc_servlet extends HttpServlet
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  private static String ResultCompoundsHtm(CompoundList cpds,HttpServletResponse response,int nmax)
+  private static String ResultCompoundsHtm(CompoundList cpds, HttpServletResponse response, int nmax)
   {
     if (cpds==null) return ("<H2>Results: 0 hits</H2>");
     DCQuery dbquery = cpds.getQuery();
     String htm="";
     String thtm="<TABLE WIDTH=\"100%\">\n";
     thtm+=("<TR><TH WIDTH=\"8%\"></TH>");
-    for (String tag: new String[]{"Structure","Names","ATCs","Products"})
+    for (String tag: new String[]{"Structure", "Names", "ATCs", "Products"})
       thtm+=("<TH WIDTH=\"23%\" BGCOLOR=\"#DDDDDD\">"+tag+"</TH>");
     thtm+=("</TR>\n");
     List<DCCompound> cpds_sorted = null;
@@ -664,7 +661,7 @@ public class dc_servlet extends HttpServlet
 
     String depictopts="kekule=TRUE";
     if (dbquery.getType().matches("^.*struct$"))
-      try { depictopts+=("&smarts="+URLEncoder.encode(dbquery.getText(),"UTF-8")); } catch (Exception e) { }
+      try { depictopts+=("&smarts="+URLEncoder.encode(dbquery.getText(), "UTF-8")); } catch (Exception e) { }
 
     int i_hit=0;
     for (DCCompound cpd: cpds_sorted)
@@ -676,19 +673,19 @@ public class dc_servlet extends HttpServlet
       rhtm+=("<TD VALIGN=\"top\" ALIGN=\"right\">"+i_hit+".<BR/>\n");
       rhtm+=("<BUTTON TYPE=\"button\" onClick=\"javascript:go_popup('"+response.encodeURL(SERVLETNAME)+"?query="+cpd_id+"[cid]&noform=TRUE','cpdwin','width=700,height=800,scrollbars=1,resizable=1')\"><B>See cpd</B></BUTTON>\n");
       if (dbquery.getType().equals("simstruct"))
-        rhtm+=("<BR>"+String.format("sim=%.2f",cpd.getSimilarity()));
+        rhtm+=("<BR>"+String.format("sim=%.2f", cpd.getSimilarity()));
       rhtm+=("</TD>\n");
 
       //Depiction:
       String imghtm;
       if (cpd.isLarge())
-        imghtm=("<I>(LARGE MOLECULE)</I><BR>MF = "+cpd.getMolformula()+"<BR>MWT = "+String.format("%.1f",cpd.getMwt())+"\n");
+        imghtm=("<I>(LARGE MOLECULE)</I><BR>MF = "+cpd.getMolformula()+"<BR>MWT = "+String.format("%.1f", cpd.getMwt())+"\n");
       else if (cpd.getAtomCount()==0)
         imghtm=("<I>(MOLECULE UNAVAILABLE)</I>\n");
       else if (cpd.getMolfile()!=null)
-        imghtm=HtmUtils.Molfile2ImgHtm(cpd.getMolfile(),depictopts,120,150,MOL2IMG_SERVLETURL,true,4,"go_zoom_mdl2img");
+        imghtm=HtmUtils.Molfile2ImgHtm(cpd.getMolfile(), depictopts, 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_mdl2img");
       else
-        imghtm=((cpd.getSmiles()!=null)?HtmUtils.Smi2ImgHtm(cpd.getSmiles(),depictopts,120,150,MOL2IMG_SERVLETURL,true,4,"go_zoom_smi2img"):"");
+        imghtm=((cpd.getSmiles()!=null)?HtmUtils.Smi2ImgHtm(cpd.getSmiles(), depictopts, 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_smi2img"):"");
       rhtm+=("<TD BGCOLOR=\"white\" ALIGN=\"center\" VALIGN=\"top\">"+imghtm+"<BR>\n"+cpd_id+"</TD>");
 
       //Names:
@@ -697,7 +694,7 @@ public class dc_servlet extends HttpServlet
       NameList cnames = dbquery.getType().matches("^.*txt$")?cpd.getNames().getNamesSortedByNiceness(dbquery.getText()):cpd.getNames().getNamesSortedByNiceness();
       for (Name name: cnames)
       {
-        String n = (dbquery.getType().matches("^.*txt$"))?(name.toString().replaceAll("(?i)("+dbquery.getText()+")","<strong>$1</strong>")):name.toString();
+        String n = (dbquery.getType().matches("^.*txt$"))?(name.toString().replaceAll("(?i)("+dbquery.getText()+")", "<strong>$1</strong>")):name.toString();
         rhtm+=("<LI>"+n);
         if (++i_name>=10) { break; }
       }
@@ -723,7 +720,7 @@ public class dc_servlet extends HttpServlet
       NameList pnames = dbquery.getType().matches("^.*txt$")?cpd.getProductnames().getNamesSortedByNiceness(dbquery.getText()):cpd.getProductnames().getNamesSortedByNiceness();
       for (Name name: pnames)
       {
-        String n = (dbquery.getType().matches("^.*txt$"))?(name.toString().replaceAll("(?i)("+dbquery.getText()+")","<strong>$1</strong>")):name.toString();
+        String n = (dbquery.getType().matches("^.*txt$"))?(name.toString().replaceAll("(?i)("+dbquery.getText()+")", "<strong>$1</strong>")):name.toString();
         rhtm+=("<LI>"+n+"\n");
         if (++i_pname>=10) break;
       }
@@ -958,8 +955,6 @@ public class dc_servlet extends HttpServlet
     DBPW=conf.getInitParameter("DBPW");
     if (DBPW==null) DBPW="dosage";
     PROXY_PREFIX=((conf.getInitParameter("PROXY_PREFIX")!=null)?conf.getInitParameter("PROXY_PREFIX"):"");
-    JSMEURL=conf.getInitParameter("JSMEURL");
-    if (JSMEURL==null) { JSMEURL=PROXY_PREFIX+APPNAME+"/jsme_win.html"; }
     LOGDIR=conf.getInitParameter("LOGDIR")+CONTEXTPATH;
     if (LOGDIR==null) LOGDIR="/tmp"+CONTEXTPATH+"_logs";
     try { N_MAX=Integer.parseInt(conf.getInitParameter("N_MAX")); }
@@ -969,9 +964,9 @@ public class dc_servlet extends HttpServlet
     if (DBCON!=null) CONTEXT.log("Connection ok: "+DBNAME);
   }
   /////////////////////////////////////////////////////////////////////////////
-  public void doGet(HttpServletRequest request,HttpServletResponse response)
+  public void doGet(HttpServletRequest request, HttpServletResponse response)
       throws IOException, ServletException
   {
-    doPost(request,response);
+    doPost(request, response);
   }
 }
