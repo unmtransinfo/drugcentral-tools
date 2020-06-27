@@ -48,7 +48,7 @@ public class dc_utils
     System.err.println("DBQuery isValid: "+dbquery.isValid());
   }
   /////////////////////////////////////////////////////////////////////////////
-  public static String DBDescribeTxt(DBCon dbcon)
+  public static String DBDescribe(DBCon dbcon, PrintWriter fout_writer)
 	throws SQLException
   {
     String txt="";
@@ -58,6 +58,7 @@ public class dc_utils
     txt+=("Total ingredients: "+IngredientCount(dbcon)+"\n");
     txt+=("Total targets: "+TargetCount(dbcon)+"\n");
     txt+=("Total activities: "+ActivityCount(dbcon)+"\n");
+    fout_writer.write(txt);
     return txt;
   }
   /////////////////////////////////////////////////////////////////////////////
@@ -833,7 +834,7 @@ public class dc_utils
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  public static String ResultProductText(DCProduct product)
+  public static String ResultProduct(DCProduct product, PrintWriter fout_writer)
   {
     String txt=("Product [ID="+product.getID()+"]\n");
     txt+="Name:\t"+product.getProductname()+"\n";
@@ -862,11 +863,12 @@ public class dc_utils
       txt+="\tCompound Smiles: "+cpd.getSmiles()+"\n";
       txt+="\tCompound CAS: "+cpd.getCAS()+"\n";
     }
+    if (fout_writer!=null) fout_writer.write(txt);
     return txt;
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  public static String ResultCompoundText(DCCompound cpd,boolean full)
+  public static String ResultCompound(DCCompound cpd, boolean full, PrintWriter fout_writer)
   {
     String txt=("Compound [ID="+cpd.getDCID()+"]\n");
     txt+=String.format("MF:\t%s\n",cpd.getMolformula());
@@ -920,11 +922,12 @@ public class dc_utils
       txt+=("\t"+i_pname+". \""+pname.toString()+"\"\n");
     }
     txt+="matchpoints:\t"+cpd.getMatchpoints()+"\n";
+    if (fout_writer!=null) fout_writer.write(txt);
     return txt;
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  public static String ResultCompoundsText(CompoundList cpds)
+  public static String ResultCompounds(CompoundList cpds, PrintWriter fout_writer)
   {
     List<DCCompound> cpds_sorted;
     if (cpds.getType().startsWith("simstr"))
@@ -938,15 +941,16 @@ public class dc_utils
       txt+=("-----------------------------------------------------------------------------\n");
       if (cpds.getType().startsWith("simstr"))
         txt+=("similarity: "+cpd.getSimilarity()+"\n");
-      txt+=ResultCompoundText(cpd,false);
+      txt+=ResultCompound(cpd, false, null);
     }
     txt+=("-----------------------------------------------------------------------------\n");
     txt+=("Compound count: "+cpds.size()+"\n");
+    fout_writer.write(txt);
     return txt;
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  public static String ResultCompoundActivitiesText(DCCompound cpd)
+  public static String ResultCompoundActivities(DCCompound cpd, PrintWriter fout_writer)
   {
     String txt="";
     txt+=("Compound ID: "+cpd.getDCID()+"\n");
@@ -988,11 +992,12 @@ public class dc_utils
       }
       txt+=("\n");
     }
+    fout_writer.write(txt);
     return txt;
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  public static String ResultProductsText(ProductList products)
+  public static String ResultProducts(ProductList products, PrintWriter fout_writer)
   {
     String txt="";
     int i=0;
@@ -1001,9 +1006,10 @@ public class dc_utils
       ++i;
       txt+="--- "+i+".\n";
       Integer product_id = product.getID();
-      txt+=ResultProductText(product);
+      txt+=ResultProduct(product, null);
     }
     txt+=("Product count: "+products.size()+"\n");
+    fout_writer.write(txt);
     return txt;
   }
 }

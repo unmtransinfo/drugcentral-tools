@@ -50,8 +50,7 @@ public class dc_app
   private static Integer dbport=5432;
   private static String dbusr="drugman";
   private static String dbpw="dosage";
-  private static String ofile="";
-  private static String dbtable=null;
+  private static String ofile=null;
   private static Integer verbose=0;
   private static Boolean describe=false;
   private static Boolean get_cpd=false;
@@ -112,14 +111,13 @@ public class dc_app
     opts.addOption(Option.builder("query").hasArg().desc("See syntax").build());
     opts.addOption(Option.builder("extidtype").hasArg().desc("External ID type").build());
     opts.addOption(Option.builder("dbhost").hasArg().desc("Db host ["+dbhost+"]").build());
-    opts.addOption(Option.builder("dbport").type(Integer.class).hasArg().desc("Db port ["+dbport+"]").build());
+    opts.addOption(Option.builder("dbport").type(Number.class).hasArg().desc("Db port ["+dbport+"]").build()); //Note: Integer.class not ok with CLI.
     opts.addOption(Option.builder("dbname").hasArg().desc("Db name ["+dbname+"]").build());
     opts.addOption(Option.builder("dbschema").hasArg().desc("Db schema ["+dbschema+"]").build());
-    opts.addOption(Option.builder("dbtable").hasArg().desc("Db table").build());
     opts.addOption(Option.builder("dbusr").hasArg().desc("Db user").build());
     opts.addOption(Option.builder("dbpw").hasArg().desc("Db pw").build());
     opts.addOption(Option.builder("param_file").hasArg().desc("Db parameter file ["+param_file+"]").build());
-    opts.addOption(Option.builder("id").longOpt("identifier").type(Integer.class).hasArg().desc("Internal ID (int)").build());
+    opts.addOption(Option.builder("id").longOpt("identifier").type(Number.class).hasArg().desc("Internal ID (int)").build()); //Note: Integer.class not ok with CLI.
     opts.addOption(Option.builder("o").hasArg().argName("OFILE").desc("Output file").build());
     opts.addOption("v", "verbose", false, "Verbose.");
     HelpFormatter helper = new HelpFormatter();
@@ -135,47 +133,42 @@ public class dc_app
       helper.printHelp(APPNAME, HELPHEADER, opts, HELPFOOTER, true);
       System.exit(0);
     }
-    if (clic.hasOption("id")) {
-      System.err.println("DEBUG: clic.getParsedOptionValue(id): "+clic.getParsedOptionValue("id"));
-      id = (Integer)(clic.getParsedOptionValue("id")); }
+    if (clic.hasOption("id")) id = ((Number)clic.getParsedOptionValue("id")).intValue();
     if (clic.hasOption("extidtype")) extidtype = clic.getOptionValue("extidtype");
     if (clic.hasOption("query")) query = clic.getOptionValue("query");
     if (clic.hasOption("o")) ofile = clic.getOptionValue("o");
-    if (clic.hasOption("dbhost")) dbhost = clic.getOptionValue("dbhost");
-    if (clic.hasOption("dbport")) { dbport = (Integer)(clic.getParsedOptionValue("dbport")); }
-    if (clic.hasOption("dbname")) dbname = clic.getOptionValue("dbname");
-    if (clic.hasOption("dbschema")) dbschema = clic.getOptionValue("dbschema");
-    if (clic.hasOption("dbusr")) dbusr = clic.getOptionValue("dbusr");
-    if (clic.hasOption("dbpw")) dbpw = clic.getOptionValue("dbpw");
-    if (clic.hasOption("dbtable")) dbtable = clic.getOptionValue("dbtable");
     if (clic.hasOption("param_file")) param_file = clic.getOptionValue("param_file");
     if (clic.hasOption("v")) { verbose = 1; }
 
     if (verbose>0) System.err.println("JRE_VERSION: "+JREUtils.JREVersion());
 
-    java.util.Date t_0 = new java.util.Date();
-
-    InputStream iStream = new FileInputStream(new File(param_file));
-    YAMLParser parser = (new YAMLFactory()).createParser(iStream);
-    for (parser.nextToken(); parser.nextToken()!=null;)
-    {
-      String key = parser.getCurrentName();
-      if (key == null) break;
-      parser.nextToken(); // get value for this "key"
-      switch (key)
-      {
-        case "DBHOST":
-          dbhost = parser.getText(); break;
-        case "DBPORT":
-          dbport = parser.getIntValue(); break;
-        case "DBNAME":
-          dbname = parser.getText(); break;
-        case "DBUSR":
-          dbusr = parser.getText(); break;
-        case "DBPW":
-          dbpw = parser.getText(); break;
+    if (new File(param_file).exists()) {
+      InputStream iStream = new FileInputStream(new File(param_file));
+      YAMLParser parser = (new YAMLFactory()).createParser(iStream);
+      for (parser.nextToken(); parser.nextToken()!=null; ) {
+        String key = parser.getCurrentName();
+        if (key==null) break;
+        parser.nextToken();
+        switch (key) {
+          case "DBHOST": dbhost = parser.getText(); break;
+          case "DBPORT": dbport = parser.getIntValue(); break;
+          case "DBNAME": dbname = parser.getText(); break;
+          case "DBSCHEMA": dbschema = parser.getText(); break;
+          case "DBUSR": dbusr = parser.getText(); break;
+          case "DBPW": dbpw = parser.getText(); break;
+        }
       }
     }
+    if (clic.hasOption("dbhost")) dbhost = clic.getOptionValue("dbhost");
+    if (clic.hasOption("dbport")) dbport = ((Number)clic.getParsedOptionValue("dbport")).intValue();
+    if (clic.hasOption("dbname")) dbname = clic.getOptionValue("dbname");
+    if (clic.hasOption("dbschema")) dbschema = clic.getOptionValue("dbschema");
+    if (clic.hasOption("dbusr")) dbusr = clic.getOptionValue("dbusr");
+    if (clic.hasOption("dbpw")) dbpw = clic.getOptionValue("dbpw");
+
+    PrintWriter fout_writer = (ofile!=null)?(new PrintWriter(new BufferedWriter(new FileWriter(new File(ofile), false)))):(new PrintWriter((OutputStream)System.out));
+
+    java.util.Date t_0 = new java.util.Date();
 
     DBCon dbcon = null;
     try { dbcon = new DBCon("postgres", dbhost, dbport, dbname, dbusr, dbpw); }
@@ -191,14 +184,14 @@ public class dc_app
 
     if (clic.hasOption("describe"))
     {
-      System.out.println(dc_utils.DBDescribeTxt(dbcon));
+      dc_utils.DBDescribe(dbcon, fout_writer);
     }
     else if (clic.hasOption("get_cpd"))
     {
       if (id==null) { helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: -get requires -id."); System.exit(1); }
       DCCompound cpd = dc_utils.GetCompound(dbcon, new DCQuery(String.format("%d[cid]", id)), log);
       if (cpd!=null)
-        System.out.println(dc_utils.ResultCompoundText(cpd, true));
+        dc_utils.ResultCompound(cpd, true, fout_writer);
       else System.out.println("No compound found.");
     }
     else if (clic.hasOption("search_cpds"))
@@ -212,31 +205,31 @@ HELPHEADER, opts, "ERROR: query must be 3+ characters."); System.exit(1); }
       CompoundList cpds = null;
       try { cpds = dc_utils.SearchCompounds(dbcon,dbquery,log); }
       catch (Exception e) { System.err.println(e.toString()); }
-      if (cpds!=null && cpds.size()>0) System.out.println(dc_utils.ResultCompoundsText(cpds));
+      if (cpds!=null && cpds.size()>0) dc_utils.ResultCompounds(cpds, fout_writer);
       else System.out.println("No compounds found.");
     }
     else if (clic.hasOption("get_cpd_activity"))
     {
-      if (id==null) {helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: -get requires -id."); System.exit(1); }
-      DCCompound cpd = dc_utils.GetCompound(dbcon,new DCQuery(String.format("%d[cid]",id)),log);
-      ResultSet rset = dc_utils.GetCompoundActivities(dbcon,cpd.getDCID());
-      dc_utils.ResultSet2CompoundActivities(rset,cpd);
-      System.out.println(dc_utils.ResultCompoundActivitiesText(cpd));
+      if (id==null) { helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: -get requires -id."); System.exit(1); }
+      DCCompound cpd = dc_utils.GetCompound(dbcon, new DCQuery(String.format("%d[cid]", id)), log);
+      ResultSet rset = dc_utils.GetCompoundActivities(dbcon, cpd.getDCID());
+      dc_utils.ResultSet2CompoundActivities(rset, cpd);
+      dc_utils.ResultCompoundActivities(cpd, fout_writer);
     }
     else if (clic.hasOption("get_product"))
     {
       if (id==null) { helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: -get requires -id."); System.exit(1); }
-      DCProduct product = dc_utils.GetProduct(dbcon,new DCQuery(String.format("%d[pid]",id)),log);
+      DCProduct product = dc_utils.GetProduct(dbcon, new DCQuery(String.format("%d[pid]", id)), log);
       if (product!=null)
-        System.out.println(dc_utils.ResultProductText(product));
+        dc_utils.ResultProduct(product, fout_writer);
     }
     else if (clic.hasOption("search_products"))
     {
       if (dbquery==null) { helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: -search requires -query."); System.exit(1); }
       if (dbquery.getText().isEmpty()) { helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: empty query string."); System.exit(1); }
       else if (dbquery.toString().length()<3) { helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: query must be 3+ characters."); System.exit(1); }
-      ProductList products = dc_utils.SearchProducts(dbcon,dbquery,log);
-      if (products!=null) System.out.println(dc_utils.ResultProductsText(products));
+      ProductList products = dc_utils.SearchProducts(dbcon, dbquery, log);
+      if (products!=null) dc_utils.ResultProducts(products, fout_writer);
     }
     else
     {
@@ -245,5 +238,6 @@ HELPHEADER, opts, "ERROR: query must be 3+ characters."); System.exit(1); }
     }
     if (verbose>0) System.err.println(log.toString());
     System.err.println("Elapsed time: "+time_utils.TimeDeltaStr(t_0,new java.util.Date()));
+    if (fout_writer!=null) fout_writer.close();
   }
 }
