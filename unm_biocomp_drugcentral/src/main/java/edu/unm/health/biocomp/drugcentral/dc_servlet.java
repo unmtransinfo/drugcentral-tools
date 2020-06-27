@@ -36,6 +36,7 @@ public class dc_servlet extends HttpServlet
 {
   private static String SERVLETNAME=null;
   private static String CONTEXTPATH=null;
+  private static ServletContext CONTEXT=null;
   private static String LOGDIR=null;	// configured in web.xml
   private static String APPNAME=null;	// configured in web.xml
   private static String UPLOADDIR=null;	// configured in web.xml
@@ -47,14 +48,12 @@ public class dc_servlet extends HttpServlet
   private static String DBPW=null;	// configured in web.xml
   private static int N_MAX=100; // configured in web.xml
   private static Boolean DEBUG=false; // configured in web.xml
-  private static ServletContext CONTEXT=null;
-  //private static ServletConfig CONFIG=null;
   private static ResourceBundle rb=null;
   private static PrintWriter out=null;
   private static ArrayList<String> outputs=null;
   private static ArrayList<String> errors=null;
   private static HttpParams params=null;
-  private static int serverport=0;
+  private static int SERVERPORT=0;
   private static String SERVERNAME=null;
   private static String REMOTEHOST=null;
   private static String DATESTR=null;
@@ -70,10 +69,10 @@ public class dc_servlet extends HttpServlet
   public void doPost(HttpServletRequest request,HttpServletResponse response)
       throws IOException,ServletException
   {
-    serverport=request.getServerPort();
-    SERVERNAME=request.getServerName();
+    SERVERPORT = request.getServerPort();
+    SERVERNAME = request.getServerName();
     if (SERVERNAME.equals("localhost")) SERVERNAME=InetAddress.getLocalHost().getHostAddress();
-    REMOTEHOST=request.getHeader("X-Forwarded-For"); // client (original)
+    REMOTEHOST = request.getHeader("X-Forwarded-For"); // client (original)
     if (REMOTEHOST!=null)
     {
       String[] addrs=Pattern.compile(",").split(REMOTEHOST);
@@ -81,21 +80,21 @@ public class dc_servlet extends HttpServlet
     }
     else
     {
-      REMOTEHOST=request.getRemoteAddr(); // client (may be proxy)
+      REMOTEHOST = request.getRemoteAddr(); // client (may be proxy)
     }
-    rb=ResourceBundle.getBundle("LocalStrings",request.getLocale());
+    rb = ResourceBundle.getBundle("LocalStrings", request.getLocale());
 
     MultipartRequest mrequest=null;
     if (request.getMethod().equalsIgnoreCase("POST"))
     {
-      try { mrequest=new MultipartRequest(request,UPLOADDIR,10*1024*1024,"ISO-8859-1", new DefaultFileRenamePolicy()); }
-      catch (IOException lEx) { this.getServletContext().log("Not a valid MultipartRequest.",lEx); }
+      try { mrequest=new MultipartRequest(request, UPLOADDIR, 10*1024*1024, "ISO-8859-1", new DefaultFileRenamePolicy()); }
+      catch (IOException lEx) { this.getServletContext().log("Not a valid MultipartRequest.", lEx); }
     }
 
     // main logic:
     ArrayList<String> cssincludes = new ArrayList<String>(Arrays.asList(PROXY_PREFIX+CONTEXTPATH+"/css/biocomp.css"));
-    ArrayList<String> jsincludes = new ArrayList<String>(Arrays.asList(PROXY_PREFIX+CONTEXTPATH+"/js/biocomp.js",PROXY_PREFIX+CONTEXTPATH+"/js/ddtip.js"));
-    boolean ok=Initialize(request,mrequest);
+    ArrayList<String> jsincludes = new ArrayList<String>(Arrays.asList(PROXY_PREFIX+CONTEXTPATH+"/js/biocomp.js", PROXY_PREFIX+CONTEXTPATH+"/js/ddtip.js"));
+    boolean ok=Initialize(request, mrequest);
     if (!ok)
     {
       response.setContentType("text/html");
@@ -149,7 +148,7 @@ public class dc_servlet extends HttpServlet
         if (dbquery.getText().isEmpty()) { outputs.add("ERROR: empty query string."); return ; }
         else if (dbquery.toString().length()<3) { outputs.add("ERROR: query must be 3+ characters."); return; }
 
-        PrintWriter out_log=new PrintWriter(new BufferedWriter(new FileWriter(LOGFILE, true)));
+        PrintWriter out_log = new PrintWriter(new BufferedWriter(new FileWriter(LOGFILE, true)));
         StringBuilder querylog = new StringBuilder();
 
         if (dbquery.getType().equalsIgnoreCase("cid")) //Query type: Get compound
@@ -345,10 +344,10 @@ public class dc_servlet extends HttpServlet
     String htm=
     ("<FORM NAME=\"mainform\" METHOD=POST ACTION=\""+response.encodeURL(SERVLETNAME)+"\"")
     +(" ENCTYPE=\"multipart/form-data\">\n")
-    +("<TABLE WIDTH=\"100%\"><TR><TD><H1>"+APPNAME+" <I>X<SUP>*</SUP></I></H1></TD><TD><DIV STYLE=\"margin-bottom:0\">drug knowledgebase<BR><I><SUP>*</SUP>experimental prototype; see official app at drugcentral.org.</I></DIV></TD><TD></TD>\n")
+    +("<TABLE WIDTH=\"100%\"><TR><TD><H1>"+APPNAME+"<SUP>*</SUP></H1></TD><TD><DIV STYLE=\"margin-bottom:0\">drug knowledgebase<BR><I><SUP>*</SUP>Official app at <a href=\"http://drugcentral.org\" target=\"_blank\">DrugCentral.org</a>.</I></DIV></TD><TD></TD>\n")
     +("<TD ALIGN=\"right\">\n")
     +("<BUTTON TYPE=BUTTON onClick=\"go_popup('"+response.encodeURL(SERVLETNAME)+"?help=TRUE&verbose=TRUE','helpwin','width=600,height=400,scrollbars=1,resizable=1')\"><B>Help</B></BUTTON>\n")
-    +("<BUTTON TYPE=BUTTON onClick=\"go_reset('"+response.encodeURL(SERVLETNAME)+"')\"><B>Reset</B></BUTTON>\n")
+    +("<BUTTON TYPE=BUTTON onClick=\"window.location.replace('"+response.encodeURL(SERVLETNAME)+"')\"><B>Reset</B></BUTTON>\n")
     +("</TD></TR></TABLE>\n")
     +("<HR>\n")
     +("<CENTER>\n")
@@ -573,7 +572,7 @@ public class dc_servlet extends HttpServlet
     String thtm=("<TABLE WIDTH=\"100%\" CELLSPACING=2 CELLPADDING=2>\n");
     if (!product.hasLargeCompound())
     {
-      imghtm=((product.getMixtureSmiles()!=null)?HtmUtils.Smi2ImgHtm(product.getMixtureSmiles(), depictopts, 180, 320, MOL2IMG_SERVLETURL, true, 4, "go_zoom_smi2img"):"");
+      imghtm = ((product.getMixtureSmiles()!=null)?HtmUtils.Smi2ImgHtm(product.getMixtureSmiles(), depictopts, 180, 320, MOL2IMG_SERVLETURL, true, 4, "go_zoom_smi2img"):"");
       thtm+=("<TR><TD></TD><TD ALIGN=\"center\" BGCOLOR=\"white\">"+imghtm+"</TD></TR>\n");
     }
     thtm+=("<TR><TD ALIGN=\"right\">Name:</TD><TD BGCOLOR=\"white\">"+product.getProductname()+"</TD></TR>\n");
@@ -793,12 +792,6 @@ public class dc_servlet extends HttpServlet
 "    cwin.close();\n"+
 "  }\n"+
 "}\n"+
-"function go_reset(url)\n"+
-"{\n"+
-"  close_childwins(window);\n"+
-"  window.location.replace(url)\n"+
-"}\n"+
-"\n"+
 "/// JSME stuff:\n"+
 "function StartJSME()\n"+
 "{\n"+
@@ -824,7 +817,7 @@ public class dc_servlet extends HttpServlet
     return (
     "<H1>"+APPNAME+" help</H1>\n"+
     "<P>\n"+
-    "<I><B>ALPHA RELEASE:</B> This user interface is a prototype only.  However, the database is in production mode, comprehensive, high quality, and actively maintained.</I>\n"+
+    "<I>This UI is for internal use only. The official web app is <a href=\"http://drugcentral.org\" target=\"_blank\">DrugCentral.org</a>.</I>\n"+
     "<P>\n"+
     "<CENTER><IMG BORDER=0 SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/drugcentral_logo.png\"></CENTER>"+
     "<H2>Introduction</H2>\n"+
@@ -908,7 +901,6 @@ public class dc_servlet extends HttpServlet
     "<H2>Source and related resources</H2>\n"+
     "<UL>\n"+
     "<LI><A HREF=\"http://www.whocc.no/atc/structure_and_principles/\">ATC reference</A>\n"+
-    "<LI><A HREF=\"http://carlsbad.health.unm.edu/\">Carlsbad</A>\n"+
     "<LI><A HREF=\"http://www.ebi.ac.uk/chembldb/\">ChEMBL</A>\n"+
     "<LI><A HREF=\"http://dailymed.nlm.nih.gov/dailymed/\">DailyMed (NLM)</A>\n"+
     "<LI><A HREF=\"http://www.drugbank.ca/\">DrugBank</A>\n"+
@@ -916,18 +908,14 @@ public class dc_servlet extends HttpServlet
     "<LI><A HREF=\"http://open.fda.gov/\">OpenFDA</A>\n"+
     "<LI><A HREF=\"http://pubchem.ncbi.nlm.nih.gov/\">PubChem</A>\n"+
     "<LI><A HREF=\"http://www.nlm.nih.gov/research/umls/rxnorm/\">RxNorm (NLM)</A>\n"+
-    "<LI><A HREF=\"http://www.sunsetmolecular.com/\">WOMBAT</A>\n"+
     "</UL>\n"+
     "<HR>\n"+
     "N_MAX (hits): "+N_MAX+"\n"+
     "<HR>\n"+
-    "<A HREF=\"http://sourceforge.net/projects/cdk/\">CDK</A> used for molecular depiction.  \n"+
-    "<A HREF=\"http://www.rdkit.org\">RDKit</A> PostgreSql cartridge used for structural searching.\n"+
+    "<A HREF=\"https://cdk.github.io/\">CDK</A> used for molecular depiction.  \n"+
+    "<A HREF=\"http://rdkit.org\">RDKit</A> PostgreSql cartridge used for structural searching.\n"+
     "<A HREF=\"http://peter-ertl.com/jsme/\">JSME</A> moleclar editor used for structure query input.\n"+
-    "<HR>\n"+
-    "<P>\n"+
-    "Database design and curation: Oleg Ursu, Tudor Oprea<br/>\n"+
-    "Webapp: Jeremy Yang\n"
+    "<HR>\n"
     );
   }
   /////////////////////////////////////////////////////////////////////////////
