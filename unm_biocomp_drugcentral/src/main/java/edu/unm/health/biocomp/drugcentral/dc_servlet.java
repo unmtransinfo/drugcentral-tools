@@ -93,7 +93,7 @@ public class dc_servlet extends HttpServlet
 
     // main logic:
     ArrayList<String> cssincludes = new ArrayList<String>(Arrays.asList(PROXY_PREFIX+CONTEXTPATH+"/css/biocomp.css"));
-    ArrayList<String> jsincludes = new ArrayList<String>(Arrays.asList(PROXY_PREFIX+CONTEXTPATH+"/js/biocomp.js", PROXY_PREFIX+CONTEXTPATH+"/js/ddtip.js"));
+    ArrayList<String> jsincludes = new ArrayList<String>(Arrays.asList(PROXY_PREFIX+CONTEXTPATH+"/js/biocomp.js", PROXY_PREFIX+CONTEXTPATH+"/js/ddtip.js", PROXY_PREFIX+CONTEXTPATH+"/js/jsme.nocache.js"));
     boolean ok=Initialize(request, mrequest);
     if (!ok)
     {
@@ -129,12 +129,12 @@ public class dc_servlet extends HttpServlet
 
       if (!params.isChecked("noform")) //for popups:
       {
-        out.println(FormHtm(mrequest,response));
+        out.println(FormHtm(mrequest, response));
         String qhtm=("<TABLE BORDER=\"0\" CELLPADDING=\"5\" CELLSPACING=\"5\">\n");
         qhtm+=("<TR><TD VALIGN=\"top\"><H2>Query:</H2></TD>\n");
         qhtm+=("<TD VALIGN=\"middle\" BGCOLOR=\"white\"><DIV STYLE=\"font-size:14px; font-family:monospace; font-weight:bold\">");
         if (dbquery.getType().matches("^.*struct$"))
-          qhtm+=(HtmUtils.Smi2ImgHtm(dbquery.getText(),"",120,150,MOL2IMG_SERVLETURL,true,4,"go_zoom_smi2img"));
+          qhtm+=(HtmUtils.Smi2ImgHtm(dbquery.getText(), "", 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_smi2img"));
         else
           qhtm+=(dbquery.toString());
         qhtm+=("</DIV></TD>");
@@ -326,8 +326,7 @@ public class dc_servlet extends HttpServlet
     return true;
   }
   /////////////////////////////////////////////////////////////////////////////
-  private String DbSummaryHtm()
-      throws SQLException
+  private String DbSummaryHtm() throws SQLException
   {
     String htm="<TABLE CELLSPACING=\"1\" CELLPADDING=\"1\">\n";
     htm+=("<TR><TD ALIGN=\"right\">compounds:</TD><TD ALIGN=\"right\" BGCOLOR=\"white\">"+dc_utils.CompoundCount(DBCON)+"</TD></TR>\n");
@@ -338,16 +337,15 @@ public class dc_servlet extends HttpServlet
     return htm;
   }
   /////////////////////////////////////////////////////////////////////////////
-  private static String FormHtm(MultipartRequest mrequest, HttpServletResponse response)
-      throws IOException
+  private static String FormHtm(MultipartRequest mrequest, HttpServletResponse response) throws IOException
   {
     String htm=
     ("<FORM NAME=\"mainform\" METHOD=POST ACTION=\""+response.encodeURL(SERVLETNAME)+"\"")
     +(" ENCTYPE=\"multipart/form-data\">\n")
-    +("<TABLE WIDTH=\"100%\"><TR><TD><H1>"+APPNAME+"<SUP>*</SUP></H1></TD><TD><DIV STYLE=\"margin-bottom:0\">drug knowledgebase<BR><I><SUP>*</SUP>Official app at <a href=\"http://drugcentral.org\" target=\"_blank\">DrugCentral.org</a>.</I></DIV></TD><TD></TD>\n")
+    +("<TABLE WIDTH=\"100%\"><TR><TD width=\"25%\"><H1>"+APPNAME+"</H1></TD><TD><DIV STYLE=\"margin-bottom:0\"><B>- approved-drug knowledge-base</B></DIV></TD><TD></TD>\n")
     +("<TD ALIGN=\"right\">\n")
     +("<BUTTON TYPE=BUTTON onClick=\"go_popup('"+response.encodeURL(SERVLETNAME)+"?help=TRUE&verbose=TRUE','helpwin','width=600,height=400,scrollbars=1,resizable=1')\"><B>Help</B></BUTTON>\n")
-    +("<BUTTON TYPE=BUTTON onClick=\"window.location.replace('"+response.encodeURL(SERVLETNAME)+"')\"><B>Reset</B></BUTTON>\n")
+    +("<BUTTON TYPE=BUTTON onClick=\"close_childwins(window); window.location.replace('"+response.encodeURL(SERVLETNAME)+"')\"><B>Reset</B></BUTTON>\n")
     +("</TD></TR></TABLE>\n")
     +("<HR>\n")
     +("<CENTER>\n")
@@ -362,8 +360,10 @@ public class dc_servlet extends HttpServlet
     +("<P>\n")
     +("<SMALL>Examples: ");
 
+    //Square brackets now invalid for URLs, per RFC 7230 and RFC 3986.
+    //Encode as %5B and %5D.
     for (String drugname: new String[]{"aspirin", "hydrocortisone", "ketorolac", "prozac", "ranitidine", "rosuvastatin", "tamoxifen", "verapamil"})
-      htm+=("&nbsp;<A HREF=\""+response.encodeURL(SERVLETNAME)+"?query="+drugname+"[fulltxt]\">"+drugname+"</A>\n");
+      htm+=("&nbsp;<A HREF=\""+response.encodeURL(SERVLETNAME)+"?query="+drugname+"%5Bfulltxt%5D\">"+drugname+"</A>\n");
 
     htm+=(
      ("<BR>\n<i>For advanced query syntax, see help.</i>\n")
@@ -451,7 +451,7 @@ public class dc_servlet extends HttpServlet
       thtm2+="<TABLE WIDTH=\"100%\" CELLSPACING=\"0\" CELLPADDING=\"0\">\n";
       for (int lev=1;lev<=4;++lev)
       {
-        thtm2+=("<TR><TD WIDTH=\"15%\"><A HREF=\"javascript:void(0)\" onClick=\"go_parentwin('"+response.encodeURL(SERVLETNAME)+"?query="+atc.getCode(lev)+"[atc"+lev+"]')\">"+atc.getCode(lev)+"</A></TD><TD>"+atc.getName(lev)+"</TD></TR>\n");
+        thtm2+=("<TR><TD WIDTH=\"15%\"><A HREF=\"javascript:void(0)\" onClick=\"go_parentwin('"+response.encodeURL(SERVLETNAME)+"?query="+atc.getCode(lev)+"%5Batc"+lev+"%5D')\">"+atc.getCode(lev)+"</A></TD><TD>"+atc.getName(lev)+"</TD></TR>\n");
       }
       thtm2+="</TABLE><P>\n";
       ++i_atc;
@@ -478,7 +478,7 @@ public class dc_servlet extends HttpServlet
       thtm2+=("</OL>\n");
     }
     thtm2+="</UL>\n";
-    String bhtm=("<BUTTON TYPE=\"button\" onClick=\"javascript:go_popup('"+response.encodeURL(SERVLETNAME)+"?query="+cpd.getDCID()+"[cid]&activityreport=TRUE&noform=TRUE','actwin','width=900,height=700,scrollbars=1,resizable=1')\"><B>See activity</B></BUTTON>");
+    String bhtm=("<BUTTON TYPE=\"button\" onClick=\"javascript:go_popup('"+response.encodeURL(SERVLETNAME)+"?query="+cpd.getDCID()+"%5Bcid%5D&activityreport=TRUE&noform=TRUE','actwin','width=900,height=700,scrollbars=1,resizable=1')\"><B>See activity</B></BUTTON>");
     thtm+="<TR><TD ALIGN=\"right\" VALIGN=\"top\">Targets ("+cpd.targetCount()+")<BR>"+bhtm+"</TD><TD BGCOLOR=\"white\">"+((cpd.targetCount()>0)?thtm2:"None")+"</TD></TR>\n";
 
     //Products:
@@ -489,7 +489,7 @@ public class dc_servlet extends HttpServlet
     {
       ++i_prd;
       thtm2+=("<TR>\n");
-      thtm2+=("<TD><A HREF=\"javascript:void(0)\" onClick=\"javascript:go_popup('"+response.encodeURL(SERVLETNAME)+"?query="+prd.getID()+"[pid]&noform=TRUE','productwin','width=700,height=800,scrollbars=1,resizable=1')\">"+prd.getID()+"</A></TD>\n");
+      thtm2+=("<TD><A HREF=\"javascript:void(0)\" onClick=\"javascript:go_popup('"+response.encodeURL(SERVLETNAME)+"?query="+prd.getID()+"%5Bpid%5D&noform=TRUE','productwin','width=700,height=800,scrollbars=1,resizable=1')\">"+prd.getID()+"</A></TD>\n");
       thtm2+=("<TD>"+prd.getProductname()+"</TD>\n");
       thtm2+=("<TD>"+prd.getGenericname()+"</TD>\n");
       thtm2+=("<TD>"+prd.getNdc()+"</TD>\n");
@@ -632,7 +632,7 @@ public class dc_servlet extends HttpServlet
       thtm2+="</UL></TD></TR>\n";
 
       thtm2+="</TABLE>\n";
-      thtm+=("<TR><TD VALIGN=\"top\" ALIGN=\"right\">Ingredient "+i+"/"+product.ingredientCount()+"<BR><BUTTON TYPE=\"button\" onClick=\"go_topwin('"+response.encodeURL(SERVLETNAME)+"?query="+cpd.getDCID()+"[cid]')\"><B>See cpd</B></BUTTON></TD><TD BGCOLOR=\"white\">"+thtm2+"</TD></TR>\n");
+      thtm+=("<TR><TD VALIGN=\"top\" ALIGN=\"right\">Ingredient "+i+"/"+product.ingredientCount()+"<BR><BUTTON TYPE=\"button\" onClick=\"go_topwin('"+response.encodeURL(SERVLETNAME)+"?query="+cpd.getDCID()+"%5Bcid%5D')\"><B>See cpd</B></BUTTON></TD><TD BGCOLOR=\"white\">"+thtm2+"</TD></TR>\n");
     }
     thtm+="</TABLE>\n";
     htm+=thtm;
@@ -670,7 +670,7 @@ public class dc_servlet extends HttpServlet
       String rhtm="<TR>\n";
       //ID, popup link:
       rhtm+=("<TD VALIGN=\"top\" ALIGN=\"right\">"+i_hit+".<BR/>\n");
-      rhtm+=("<BUTTON TYPE=\"button\" onClick=\"javascript:go_popup('"+response.encodeURL(SERVLETNAME)+"?query="+cpd_id+"[cid]&noform=TRUE','cpdwin','width=700,height=800,scrollbars=1,resizable=1')\"><B>See cpd</B></BUTTON>\n");
+      rhtm+=("<BUTTON TYPE=\"button\" onClick=\"javascript:go_popup('"+response.encodeURL(SERVLETNAME)+"?query="+cpd_id+"%5Bcid%5D&noform=TRUE','cpdwin','width=700,height=800,scrollbars=1,resizable=1')\"><B>See cpd</B></BUTTON>\n");
       if (dbquery.getType().equals("simstruct"))
         rhtm+=("<BR>"+String.format("sim=%.2f", cpd.getSimilarity()));
       rhtm+=("</TD>\n");
@@ -815,11 +815,10 @@ public class dc_servlet extends HttpServlet
   private static String HelpHtm()
   {
     return (
-    "<H1>"+APPNAME+" help</H1>\n"+
+    "<img align=\"right\" height=\"100\" src=\""+PROXY_PREFIX+CONTEXTPATH+"/images/drugcentral_logo.png\"></CENTER>"+
+    "<H1>"+APPNAME+" Help</H1>\n"+
+    "<I>This web app for internal use only. Official web app: <a href=\"http://drugcentral.org\" target=\"_blank\">DrugCentral.org</a>.</I>\n"+
     "<P>\n"+
-    "<I>This UI is for internal use only. The official web app is <a href=\"http://drugcentral.org\" target=\"_blank\">DrugCentral.org</a>.</I>\n"+
-    "<P>\n"+
-    "<CENTER><IMG BORDER=0 SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/drugcentral_logo.png\"></CENTER>"+
     "<H2>Introduction</H2>\n"+
     APPNAME+" is a research database developed at the University of New Mexico Translational Informatics Division.\n"+
     "The database is designed to contain all compounds approved for use as human therapeutics.\n"+
@@ -914,8 +913,7 @@ public class dc_servlet extends HttpServlet
     "<HR>\n"+
     "<A HREF=\"https://cdk.github.io/\">CDK</A> used for molecular depiction.  \n"+
     "<A HREF=\"http://rdkit.org\">RDKit</A> PostgreSql cartridge used for structural searching.\n"+
-    "<A HREF=\"http://peter-ertl.com/jsme/\">JSME</A> moleclar editor used for structure query input.\n"+
-    "<HR>\n"
+    "<A HREF=\"http://peter-ertl.com/jsme/\">JSME</A> moleclar editor used for structure query input.\n"
     );
   }
   /////////////////////////////////////////////////////////////////////////////
