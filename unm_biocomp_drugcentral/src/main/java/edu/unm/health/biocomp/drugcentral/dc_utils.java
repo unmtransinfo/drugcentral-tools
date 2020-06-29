@@ -18,7 +18,6 @@ import org.openscience.cdk.depict.*; // Depiction, DepictionGenerator
 
 import edu.unm.health.biocomp.util.*; //time_utils
 import edu.unm.health.biocomp.util.db.*; //DBCon
-import edu.unm.health.biocomp.util.jre.*;
 import edu.unm.health.biocomp.text.*; //Name,NameList
 
 /**	Utilities for DrugCentral (DC) queries and admin.
@@ -51,7 +50,9 @@ public class dc_utils
   public static String DBDescribe(DBCon dbcon, PrintWriter fout_writer)
 	throws SQLException
   {
+    Version v = GetVersion(dbcon);
     String txt="";
+    txt+=("Version: "+v.version+" ("+v.dtime+")\n");
     txt+=("Total compounds: "+CompoundCount(dbcon)+"\n");
     txt+=("Total synonyms: "+SynonymCount(dbcon)+"\n");
     txt+=("Total products: "+ProductCount(dbcon)+"\n");
@@ -62,48 +63,54 @@ public class dc_utils
     return txt;
   }
   /////////////////////////////////////////////////////////////////////////////
+  public static Version GetVersion(DBCon dbcon) throws SQLException
+  {
+    ResultSet rset = dbcon.executeSql("SELECT version,dtime FROM dbversion");
+    if (!rset.next()) return new Version("?", "?");
+    else return new Version(rset.getString(1),rset.getString(2));
+  }
   public static String RDKitVersion(DBCon dbcon)
   {
     try {
-      ResultSet rset=dbcon.executeSql("SELECT rdkit_version()");
-      rset.next();
-      return (rset.getString(1));
+      ResultSet rset = dbcon.executeSql("SELECT rdkit_version()");
+      if (!rset.next()) return ("?");
+      else return (rset.getString(1));
     } catch (SQLException e) { return ("?"); }
   }
   /////////////////////////////////////////////////////////////////////////////
   public static int ProductCount(DBCon dbcon) throws SQLException
   {
-    ResultSet rset=dbcon.executeSql("SELECT COUNT(id) FROM public.product");
+    ResultSet rset = dbcon.executeSql("SELECT COUNT(id) FROM public.product");
     return (rset.next()?rset.getInt(1):0);
   }
   public static int IngredientCount(DBCon dbcon) throws SQLException
   {
-    ResultSet rset=dbcon.executeSql("SELECT COUNT(id) FROM public.active_ingredient");
+    ResultSet rset = dbcon.executeSql("SELECT COUNT(id) FROM public.active_ingredient");
     return (rset.next()?rset.getInt(1):0);
   }
   public static int CompoundCount(DBCon dbcon) throws SQLException
   {
-    ResultSet rset=dbcon.executeSql("SELECT COUNT(id) FROM public.structures");
+    ResultSet rset = dbcon.executeSql("SELECT COUNT(id) FROM public.structures");
     return (rset.next()?rset.getInt(1):0);
   }
   public static int TargetCount(DBCon dbcon) throws SQLException
   {
-    ResultSet rset=dbcon.executeSql("SELECT COUNT(id) FROM public.target_dictionary");
+    ResultSet rset = dbcon.executeSql("SELECT COUNT(id) FROM public.target_dictionary");
     return (rset.next()?rset.getInt(1):0);
   }
   public static int ActivityCount(DBCon dbcon) throws SQLException
   {
-    ResultSet rset=dbcon.executeSql("SELECT COUNT(act_id) FROM public.act_table_full");
+    ResultSet rset = dbcon.executeSql("SELECT COUNT(act_id) FROM public.act_table_full");
     return (rset.next()?rset.getInt(1):0);
   }
   public static int SynonymCount(DBCon dbcon) throws SQLException
   {
-    ResultSet rset=dbcon.executeSql("SELECT COUNT(syn_id) FROM public.synonyms");
+    ResultSet rset = dbcon.executeSql("SELECT COUNT(syn_id) FROM public.synonyms");
     return (rset.next()?rset.getInt(1):0);
   }
   public static int ReferenceCount(DBCon dbcon) throws SQLException
   {
-    ResultSet rset=dbcon.executeSql("SELECT COUNT(id) FROM public.reference");
+    ResultSet rset = dbcon.executeSql("SELECT COUNT(id) FROM public.reference");
     return (rset.next()?rset.getInt(1):0);
   }
   /////////////////////////////////////////////////////////////////////////////

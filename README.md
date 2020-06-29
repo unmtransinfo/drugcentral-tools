@@ -1,18 +1,18 @@
 # `DRUGCENTRAL-TOOLS`
 
-Client tools, including original prototype web app,
-example SQL, example R, 
+Client tools, including original prototype web app, example SQL, example R, 
 and workflow for Docker container of PostgreSql db.
 
 * See also [BioClients](https://github.com/jeremyjyang/BioClients) for DrugCentral Python API (for Pg db).
-
-___NOT___ required for DrugCentral build.
 
 ## Dependencies
 
 * Java 1.8
 * Maven 3.5+
 * Docker (Ubuntu 18.04, PostgreSql 10)
+* [CDK \(Chemistry Development Kit\)](https://cdk.github.io/)
+* [JSME \(JavaScript Molecular Editor\)](http://peter-ertl.com/jsme/)
+* [RDKit](http://rdkit.org/)
 
 ## Compilation
 
@@ -28,9 +28,6 @@ mvn clean install
 ## Deploying `DRUGCENTRAL_WAR`
 
 Ok for Tomcat v8/v9 also, apparently.
-
-Copy your ChemAxon license to `/drugcentral_war/src/main/webapp/.chemaxon/license.cxl` 
-for inclusion in the WAR.
 
 ```
 mvn --projects drugcentral_war tomcat7:deploy

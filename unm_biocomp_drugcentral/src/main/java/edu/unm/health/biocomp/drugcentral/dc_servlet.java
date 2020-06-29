@@ -328,7 +328,9 @@ public class dc_servlet extends HttpServlet
   /////////////////////////////////////////////////////////////////////////////
   private String DbSummaryHtm() throws SQLException
   {
+    Version v = dc_utils.GetVersion(DBCON);
     String htm="<TABLE CELLSPACING=\"1\" CELLPADDING=\"1\">\n";
+    htm+=("<TR><TD ALIGN=\"right\">version:</TD><TD ALIGN=\"right\" BGCOLOR=\"white\">"+v.version+" ("+v.dtime+")</TD></TR>\n");
     htm+=("<TR><TD ALIGN=\"right\">compounds:</TD><TD ALIGN=\"right\" BGCOLOR=\"white\">"+dc_utils.CompoundCount(DBCON)+"</TD></TR>\n");
     htm+=("<TR><TD ALIGN=\"right\">products:</TD><TD ALIGN=\"right\" BGCOLOR=\"white\">"+dc_utils.ProductCount(DBCON)+"</TD></TR>\n");
     htm+=("<TR><TD ALIGN=\"right\">targets:</TD><TD ALIGN=\"right\" BGCOLOR=\"white\">"+dc_utils.TargetCount(DBCON)+"</TD></TR>\n");
