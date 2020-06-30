@@ -235,52 +235,66 @@ public class dc_servlet extends HttpServlet
     {
       boolean ok=dout.mkdir();
       System.err.println("LOGDIR creation "+(ok?"succeeded":"failed")+": "+LOGDIR);
-      if (!ok) { errors.add("ERROR: could not create LOGDIR: "+LOGDIR); return false; }
+     if (!ok)
+       errors.add("ERROR: could not create LOGDIR (logging disabled): "+LOGDIR);
     }
 
-    String logpath=LOGDIR+"/"+SERVLETNAME+".log";
-    LOGFILE=new File(logpath);
+    LOGFILE=new File(LOGDIR+"/"+SERVLETNAME+".log");
     if (!LOGFILE.exists())
     {
-      try { LOGFILE.createNewFile(); }
-      catch (IOException e) { errors.add("ERROR: Cannot create log file:"+e.getMessage()); return false; }
-      LOGFILE.setWritable(true, true);
-      PrintWriter out_log=new PrintWriter(LOGFILE);
-      out_log.println("date\tip\tquery"); 
-      out_log.flush();
-      out_log.close();
+      try {
+	LOGFILE.createNewFile();
+        LOGFILE.setWritable(true, true);
+        PrintWriter out_log=new PrintWriter(LOGFILE);
+        out_log.println("date\tip\tquery"); 
+        out_log.flush();
+        out_log.close();
+      }
+      catch (Exception e) {
+	errors.add("ERROR: could not create LOGFILE (logging disabled): "+e);
+        LOGFILE = null;
+      }
     }
-    if (!LOGFILE.canWrite()) { errors.add("ERROR: Log file not writable."); return false; }
-    BufferedReader buff=new BufferedReader(new FileReader(LOGFILE));
-    if (buff==null) { errors.add("ERROR: Cannot open log file."); return false; }
-
-    int n_lines=0;
-    String line=null;
-    Calendar calendar=Calendar.getInstance();
-    while ((line=buff.readLine())!=null)
+    else if (!LOGFILE.canWrite()) {
+      errors.add("ERROR: LOGFILE not writable (logging disabled).");
+      LOGFILE = null;
+    }
+    if (LOGFILE!=null)
     {
-      ++n_lines;
-      String[] fields=Pattern.compile("\\t").split(line);
-      if (n_lines==2) 
-        calendar.set(Integer.parseInt(fields[0].substring(0, 4)),
+      BufferedReader buff = new BufferedReader(new FileReader(LOGFILE));
+      if (buff==null) {
+        errors.add("ERROR: Cannot open log file.");
+      }
+      else
+      {
+        int n_lines=0;
+        String line=null;
+        Calendar calendar=Calendar.getInstance();
+        while ((line=buff.readLine())!=null)
+        {
+          ++n_lines;
+          String[] fields=Pattern.compile("\\t").split(line);
+          if (n_lines==2) 
+            calendar.set(Integer.parseInt(fields[0].substring(0, 4)),
                Integer.parseInt(fields[0].substring(4, 6))-1,
                Integer.parseInt(fields[0].substring(6, 8)),
                Integer.parseInt(fields[0].substring(8, 10)),
                Integer.parseInt(fields[0].substring(10, 12)), 0);
+        }
+        if (n_lines>1)
+        {
+          DateFormat df=DateFormat.getDateInstance(DateFormat.FULL, Locale.US);
+          errors.add("Since "+df.format(calendar.getTime())+", times used: "+(n_lines-1));
+        }
+        calendar.setTime(new java.util.Date());
+        DATESTR=String.format("%04d%02d%02d%02d%02d",
+          calendar.get(Calendar.YEAR),
+          calendar.get(Calendar.MONTH)+1,
+          calendar.get(Calendar.DAY_OF_MONTH),
+          calendar.get(Calendar.HOUR_OF_DAY),
+          calendar.get(Calendar.MINUTE));
+      }
     }
-    if (n_lines>1)
-    {
-      DateFormat df=DateFormat.getDateInstance(DateFormat.FULL, Locale.US);
-      errors.add("Since "+df.format(calendar.getTime())+", times used: "+(n_lines-1));
-    }
-
-    calendar.setTime(new java.util.Date());
-    DATESTR=String.format("%04d%02d%02d%02d%02d",
-      calendar.get(Calendar.YEAR),
-      calendar.get(Calendar.MONTH)+1,
-      calendar.get(Calendar.DAY_OF_MONTH),
-      calendar.get(Calendar.HOUR_OF_DAY),
-      calendar.get(Calendar.MINUTE));
 
     MOL2IMG_SERVLETURL = (PROXY_PREFIX+CONTEXTPATH+"/mol2img");
     JSMEURL = (PROXY_PREFIX+CONTEXTPATH+"/jsme_win.html");

@@ -67,7 +67,7 @@ public class dc_utils
   {
     ResultSet rset = dbcon.executeSql("SELECT version,dtime FROM dbversion");
     if (!rset.next()) return new Version("?", "?");
-    else return new Version(rset.getString(1),rset.getString(2));
+    else return new Version(rset.getString(1), rset.getString(2));
   }
   public static String RDKitVersion(DBCon dbcon)
   {
@@ -75,7 +75,7 @@ public class dc_utils
       ResultSet rset = dbcon.executeSql("SELECT rdkit_version()");
       if (!rset.next()) return ("?");
       else return (rset.getString(1));
-    } catch (SQLException e) { return ("?"); }
+    } catch (SQLException e) { return ("~"); }
   }
   /////////////////////////////////////////////////////////////////////////////
   public static int ProductCount(DBCon dbcon) throws SQLException
