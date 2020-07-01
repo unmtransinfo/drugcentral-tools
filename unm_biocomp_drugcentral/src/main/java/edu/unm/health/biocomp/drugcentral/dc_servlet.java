@@ -58,6 +58,7 @@ public class dc_servlet extends HttpServlet
   private static String REMOTEHOST=null;
   private static String DATESTR=null;
   private static File LOGFILE=null;
+  private static PrintWriter out_log=null;
   private static String color1="#EEEEEE";
   private static int DEPSZ=120;
   private static String MOL2IMG_SERVLETURL="";
@@ -148,9 +149,8 @@ public class dc_servlet extends HttpServlet
         if (dbquery.getText().isEmpty()) { outputs.add("ERROR: empty query string."); return ; }
         else if (dbquery.toString().length()<3) { outputs.add("ERROR: query must be 3+ characters."); return; }
 
-        PrintWriter out_log = new PrintWriter(new BufferedWriter(new FileWriter(LOGFILE, true)));
         StringBuilder querylog = new StringBuilder();
-
+        if (LOGFILE!=null) out_log = new PrintWriter(LOGFILE);
         if (dbquery.getType().equalsIgnoreCase("cid")) //Query type: Get compound
         {
           DCCompound cpd = null;
@@ -183,8 +183,10 @@ public class dc_servlet extends HttpServlet
           outputs.add(ResultCompoundsHtm(cpds, response, N_MAX));
         }
         out.println(HtmUtils.OutputHtm(outputs));
-        out_log.printf("%s\t%s\t\"%s\"\n", DATESTR, REMOTEHOST, dbquery.toString());
-        out_log.close();
+        if (out_log!=null) {
+	  out_log.printf("%s\t%s\t\"%s\"\n", DATESTR, REMOTEHOST, dbquery.toString());
+          out_log.close();
+	}
         if (params.isChecked("verbose"))
           if (querylog.length()>0)
             errors.add("<PRE>"+querylog.toString()+"</PRE>");
@@ -239,13 +241,13 @@ public class dc_servlet extends HttpServlet
        errors.add("ERROR: could not create LOGDIR (logging disabled): "+LOGDIR);
     }
 
-    LOGFILE=new File(LOGDIR+"/"+SERVLETNAME+".log");
+    LOGFILE = new File(LOGDIR+"/"+SERVLETNAME+".log");
     if (!LOGFILE.exists())
     {
       try {
 	LOGFILE.createNewFile();
         LOGFILE.setWritable(true, true);
-        PrintWriter out_log=new PrintWriter(LOGFILE);
+        out_log = new PrintWriter(LOGFILE);
         out_log.println("date\tip\tquery"); 
         out_log.flush();
         out_log.close();
