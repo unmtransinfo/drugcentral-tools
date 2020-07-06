@@ -37,7 +37,6 @@ public class dc_servlet extends HttpServlet
   private static String SERVLETNAME=null;
   private static String CONTEXTPATH=null;
   private static ServletContext CONTEXT=null;
-  private static String LOGDIR=null;	// configured in web.xml
   private static String APPNAME=null;	// configured in web.xml
   private static String UPLOADDIR=null;	// configured in web.xml
   private static String DBHOST=null;	// configured in web.xml
@@ -57,7 +56,6 @@ public class dc_servlet extends HttpServlet
   private static String SERVERNAME=null;
   private static String REMOTEHOST=null;
   private static String DATESTR=null;
-  private static File LOGFILE=null;
   private static PrintWriter out_log=null;
   private static String color1="#EEEEEE";
   private static int DEPSZ=120;
@@ -150,7 +148,6 @@ public class dc_servlet extends HttpServlet
         else if (dbquery.toString().length()<3) { outputs.add("ERROR: query must be 3+ characters."); return; }
 
         StringBuilder querylog = new StringBuilder();
-        if (LOGFILE!=null) out_log = new PrintWriter(LOGFILE);
         if (dbquery.getType().equalsIgnoreCase("cid")) //Query type: Get compound
         {
           DCCompound cpd = null;
@@ -230,73 +227,6 @@ public class dc_servlet extends HttpServlet
     logo_htm+=(HtmUtils.HtmTipper(imghtm, tiphtm, href, 200, "white"));
     logo_htm+="</TD></TR></TABLE>";
     errors.add("<CENTER>"+logo_htm+"</CENTER>");
-
-    //Create log dir if necessary:
-    File dout=new File(LOGDIR);
-    if (!dout.exists())
-    {
-      boolean ok=dout.mkdir();
-      System.err.println("LOGDIR creation "+(ok?"succeeded":"failed")+": "+LOGDIR);
-     if (!ok)
-       errors.add("ERROR: could not create LOGDIR (logging disabled): "+LOGDIR);
-    }
-
-    LOGFILE = new File(LOGDIR+"/"+SERVLETNAME+".log");
-    if (!LOGFILE.exists())
-    {
-      try {
-	LOGFILE.createNewFile();
-        LOGFILE.setWritable(true, true);
-        out_log = new PrintWriter(LOGFILE);
-        out_log.println("date\tip\tquery"); 
-        out_log.flush();
-        out_log.close();
-      }
-      catch (Exception e) {
-	errors.add("ERROR: could not create LOGFILE (logging disabled): "+e);
-        LOGFILE = null;
-      }
-    }
-    else if (!LOGFILE.canWrite()) {
-      errors.add("ERROR: LOGFILE not writable (logging disabled).");
-      LOGFILE = null;
-    }
-    if (LOGFILE!=null)
-    {
-      BufferedReader buff = new BufferedReader(new FileReader(LOGFILE));
-      if (buff==null) {
-        errors.add("ERROR: Cannot open log file.");
-      }
-      else
-      {
-        int n_lines=0;
-        String line=null;
-        Calendar calendar=Calendar.getInstance();
-        while ((line=buff.readLine())!=null)
-        {
-          ++n_lines;
-          String[] fields=Pattern.compile("\\t").split(line);
-          if (n_lines==2) 
-            calendar.set(Integer.parseInt(fields[0].substring(0, 4)),
-               Integer.parseInt(fields[0].substring(4, 6))-1,
-               Integer.parseInt(fields[0].substring(6, 8)),
-               Integer.parseInt(fields[0].substring(8, 10)),
-               Integer.parseInt(fields[0].substring(10, 12)), 0);
-        }
-        if (n_lines>1)
-        {
-          DateFormat df=DateFormat.getDateInstance(DateFormat.FULL, Locale.US);
-          errors.add("Since "+df.format(calendar.getTime())+", times used: "+(n_lines-1));
-        }
-        calendar.setTime(new java.util.Date());
-        DATESTR=String.format("%04d%02d%02d%02d%02d",
-          calendar.get(Calendar.YEAR),
-          calendar.get(Calendar.MONTH)+1,
-          calendar.get(Calendar.DAY_OF_MONTH),
-          calendar.get(Calendar.HOUR_OF_DAY),
-          calendar.get(Calendar.MINUTE));
-      }
-    }
 
     MOL2IMG_SERVLETURL = (PROXY_PREFIX+CONTEXTPATH+"/mol2img");
     JSMEURL = (PROXY_PREFIX+CONTEXTPATH+"/jsme_win.html");
@@ -959,8 +889,6 @@ public class dc_servlet extends HttpServlet
     DBPW=conf.getInitParameter("DBPW");
     if (DBPW==null) DBPW="dosage";
     PROXY_PREFIX=((conf.getInitParameter("PROXY_PREFIX")!=null)?conf.getInitParameter("PROXY_PREFIX"):"");
-    LOGDIR=conf.getInitParameter("LOGDIR")+CONTEXTPATH;
-    if (LOGDIR==null) LOGDIR="/tmp"+CONTEXTPATH+"_logs";
     try { N_MAX=Integer.parseInt(conf.getInitParameter("N_MAX")); }
     catch (Exception e) { N_MAX=100; }
     try { String s=conf.getInitParameter("DEBUG"); if (s.equalsIgnoreCase("TRUE")) DEBUG=true; }
