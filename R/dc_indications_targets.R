@@ -23,12 +23,13 @@ sql <- read_file("sql/indication_targets.sql")
 intgts <- dbGetQuery(dbcon, sql, colClasses="character")
 setDT(intgts)
 intgts[, moa := as.logical(!is.na(moa))]
-message(sprintf("Total indications: %d; drugs: %d; targets: %d; pairs: %d", 
+message(sprintf("Total indications: %d; drugs: %d; targets: %d; ind-tgt-pairs: %d", 
                 intgts[, uniqueN(umls_cui)], intgts[, uniqueN(struct_id)], intgts[, uniqueN(gene)], nrow(unique(intgts[, .(umls_cui, gene)]))))
 
-message(sprintf("Total MOA indications: %d; drugs: %d; targets: %d; pairs: %d", 
+message(sprintf("Total MOA indications: %d; drugs: %d; targets: %d; ind-tgt-pairs: %d", 
                 intgts[(moa), uniqueN(umls_cui)], intgts[(moa), uniqueN(struct_id)], intgts[(moa), uniqueN(gene)], nrow(unique(intgts[(moa), .(umls_cui, gene)]))))
-
+#
+intgts_moa <- unique(intgts[(moa) & !is.na(gene), .(n_drug = uniqueN(struct_id)), by = c("omop_concept", "umls_cui", "gene", "target_id", "target_name")])[order(omop_concept, gene)]
 #
 ok <- dbDisconnect(dbcon)
 #
