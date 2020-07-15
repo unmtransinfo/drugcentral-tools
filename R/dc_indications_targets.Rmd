@@ -64,6 +64,12 @@ knitr::kable(tgts_moa[order(-n_drug)][1:25, .(omop_concept, gene, target_name, n
 knitr::kable(tgts_moa[, .(n_drug = sum(n_drug)), by=c("gene", "target_name")][order(-n_drug)][1:25], caption="Most-drugged genes")
 ```
 
+## Save files
+
+```{r}
+write_delim(unique(tgts_moa[, .(umls_cui)]), "data/dc_moa_indications.cui")
+```
+
 ```{r}
 ok <- dbDisconnect(dbcon)
 message(sprintf("elapsed time (total): %.2fs",(proc.time()-t0)[3]))
