@@ -1,0 +1,70 @@
+---
+title: "DrugCentral MoA targets"
+author: "Jeremy Yang"
+output:
+  html_document:
+    number_sections: yes
+    toc: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+# DrugCentral MoA targets with associated indications and diseases.
+
+```{r echo=FALSE}
+knitr::opts_chunk$set(echo=FALSE, message=FALSE)
+knitr::opts_knit$set(root.dir = "..")
+base::date()
+```
+
+```{r message=FALSE, warning=FALSE}
+library(RPostgreSQL, quietly = T)
+library(readr, quietly=T)
+library(data.table, quietly=T)
+library(plotly, quietly=T)
+```
+
+## Connect to db.
+
+```{r}
+t0 <- proc.time()
+dbcon <- dbConnect(PostgreSQL(), host="unmtid-dbs.net", port=5433, dbname="drugcentral", user="drugman", password="dosage")
+```
+
+## Check db version.
+
+```{r}
+dbver <- dbGetQuery(dbcon, "SELECT * FROM dbversion", colClasses="character")
+print(sprintf("DrugCentral version: %s (%s)\n", dbver$version[1], dbver$dtime[1]))
+```
+
+
+```{r}
+sql <- read_file("sql/indication_targets.sql")
+tgts <- dbGetQuery(dbcon, sql, colClasses="character")
+setDT(tgts)
+tgts[, moa := as.logical(!is.na(moa))]
+message(sprintf("Total indications: %d; drugs: %d; targets: %d; ind-tgt-pairs: %d", 
+                tgts[, uniqueN(umls_cui)], tgts[, uniqueN(struct_id)], tgts[, uniqueN(gene)], nrow(unique(tgts[, .(umls_cui, gene)]))))
+
+message(sprintf("Total MOA indications: %d; drugs: %d; targets: %d; ind-tgt-pairs: %d", 
+                tgts[(moa), uniqueN(umls_cui)], tgts[(moa), uniqueN(struct_id)], tgts[(moa), uniqueN(gene)], nrow(unique(tgts[(moa), .(umls_cui, gene)]))))
+```
+
+## Most-drugged indication-gene pairs:
+
+```{r}
+tgts_moa <- unique(tgts[(moa) & !is.na(gene), .(n_drug = uniqueN(struct_id)), by = c("omop_concept", "umls_cui", "gene", "target_id", "target_name")])[order(omop_concept, gene)]
+knitr::kable(tgts_moa[order(-n_drug)][1:25, .(omop_concept, gene, target_name, n_drug)], caption="Most-drugged indication-gene pairs")
+```
+
+## Most-drugged genes:
+
+```{r}
+knitr::kable(tgts_moa[, .(n_drug = sum(n_drug)), by=c("gene", "target_name")][order(-n_drug)][1:25], caption="Most-drugged genes")
+```
+
+```{r}
+ok <- dbDisconnect(dbcon)
+message(sprintf("elapsed time (total): %.2fs",(proc.time()-t0)[3]))
+```
