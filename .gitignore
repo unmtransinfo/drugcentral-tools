@@ -2,8 +2,11 @@
 .Rproj.user
 .Rhistory
 .RData
+.Rdata
 .Ruserdata
 data
 R/*/*.tsv.gz
-R/*/*.RData
+R/*.html
 **/license.cxl
+**/target
+**/rsconnect
