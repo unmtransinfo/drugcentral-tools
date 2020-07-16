@@ -48,7 +48,7 @@ sql <- read_file("sql/indication_targets.sql")
 tgts <- dbGetQuery(dbcon, sql, colClasses="character")
 setDT(tgts)
 tgts[, moa := as.logical(!is.na(moa))]
-tgts[, gene := gsub("\\|", " | ", gene)]
+tgts[, gene := gsub("\\|", " , ", gene)]
 ```
 
 ### All indication-drug-target associations
@@ -101,8 +101,10 @@ tgts_pd <- tgts[grepl("Parkinson", omop_concept, ignore.case=T)][order(omop_conc
 write_delim(tgts_pd, "data/dc_pd_targets.tsv", "\t")
 print(sprintf("Parkinson indications: %d; drugs: %d; genes: %d", tgts_pd[, uniqueN(omop_concept)], tgts_pd[, uniqueN(struct_id)], tgts_pd[, uniqueN(gene)]))
 print(sprintf("Parkinson MOA indications: %d; drugs: %d; genes: %d", tgts_pd[(moa), uniqueN(omop_concept)], tgts_pd[(moa), uniqueN(struct_id)], tgts_pd[(moa), uniqueN(gene)]))
-tgts_pd <- tgts_pd[(moa) & !is.na(umls_cui), .(n_drug = uniqueN(struct_id)), by=c("umls_cui", "omop_concept", "gene", "target_name")][order(omop_concept)]
-knitr::kable(tgts_pd, caption="Parkinson Disease: MOA Targets")
+print(sprintf("Parkinson genes: %s", paste(collapse=", ", tgts_pd[, sort(unique(gene))])))
+print(sprintf("Parkinson MOA genes: %s", paste(collapse=", ", tgts_pd[(moa), sort(unique(gene))])))
+tgts_pd_moa <- tgts_pd[(moa) & !is.na(umls_cui), .(n_drug = uniqueN(struct_id)), by=c("umls_cui", "omop_concept", "gene", "target_name")][order(omop_concept)]
+knitr::kable(tgts_pd_moa, caption="Parkinson Disease: MOA Targets")
 ```
 
 ```{r}
