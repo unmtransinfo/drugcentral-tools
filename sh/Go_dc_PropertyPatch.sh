@@ -5,11 +5,9 @@ SRCDATADIR="${HOME}/../data/DrugCentral/PropertyPatch"
 DBNAME="drugcentral"
 SCHEMA="public"
 #
-# Temporary SUPERUSER to allow COPY:
-#sudo -u postgres psql -c "ALTER USER $USER WITH SUPERUSER"
 ###
-psql -t -d $DBNAME -c "DROP TABLE IF EXISTS property_type CASCADE"
-psql -t -d $DBNAME -c "DROP TABLE IF EXISTS property CASCADE"
+psql -d $DBNAME -c "DROP TABLE IF EXISTS property_type CASCADE"
+psql -d $DBNAME -c "DROP TABLE IF EXISTS property CASCADE"
 #
 psql -d $DBNAME <<__EOF__
 CREATE TABLE property_type (
@@ -31,7 +29,16 @@ CREATE TABLE property (
 );
 __EOF__
 ###
-
+#
+psql -d $DBNAME -c "CREATE ROLE drugman WITH LOGIN PASSWORD 'dosage'"
+psql -d $DBNAME -c "GRANT SELECT ON ALL TABLES IN SCHEMA public TO drugman"
+psql -d $DBNAME -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO drugman"
+psql -d $DBNAME -c "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO drugman"
+psql -d $DBNAME -c "GRANT USAGE ON SCHEMA public TO drugman"
+#
+###
+# Temporary SUPERUSER to allow COPY:
+#sudo -u postgres psql -c "ALTER USER $USER WITH SUPERUSER"
 #
 psql -d $DBNAME <<__EOF__
 COPY property_type(symbol, name, units, category)
@@ -45,6 +52,8 @@ WITH (
 );
 __EOF__
 #
+#sudo -u postgres psql -c "ALTER USER $USER WITH NOSUPERUSER"
+###
 psql -d $DBNAME -Atc "select * from property_type"
 #
 ###
@@ -66,13 +75,13 @@ while [ "$i" -lt "$N" ]; do
 	printf "%d. struct_id=%s; bddcs=%s; s=%s; eom=%s\n" "$i" "$struct_id" "$bddcs" "$s" "$eom"
 	#
 	if [ "$bddcs" ]; then
-		psql -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'BDDCS', $bddcs, '$ifile_name')"
+		psql -q -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'BDDCS', $bddcs, '$ifile_name')"
 	fi
 	if [ "$s" ]; then
-		psql -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'S', $s, '$ifile_name')"
+		psql -q -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'S', $s, '$ifile_name')"
 	fi
 	if [ "$eom" ]; then
-		psql -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'EoM', $eom, '$ifile_name')"
+		psql -q -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'EoM', $eom, '$ifile_name')"
 	fi
 done
 #
@@ -94,7 +103,7 @@ while [ "$i" -lt "$N" ]; do
 	printf "%d. struct_id=%s; mrtd=%s\n" "$i" "$struct_id" "$mrtd"
 	#
 	if [ "$mrtd" ]; then
-		psql -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'MRTD', $mrtd, '$ifile_name')"
+		psql -q -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'MRTD', $mrtd, '$ifile_name')"
 	fi
 done
 #
@@ -117,13 +126,13 @@ while [ "$i" -lt "$N" ]; do
 	printf "%d. struct_id=%s; bddcs=%s; s=%s; eom=%s\n" "$i" "$struct_id" "$bddcs" "$s" "$eom"
 	#
 	if [ "$bddcs" ]; then
-		psql -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'BDDCS', $bddcs, '$ifile_name')"
+		psql -q -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'BDDCS', $bddcs, '$ifile_name')"
 	fi
 	if [ "$s" ]; then
-		psql -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'S', $s, '$ifile_name')"
+		psql -q -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'S', $s, '$ifile_name')"
 	fi
 	if [ "$eom" ]; then
-		psql -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'EoM', $eom, '$ifile_name')"
+		psql -q -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'EoM', $eom, '$ifile_name')"
 	fi
 done
 #
@@ -144,7 +153,7 @@ while [ "$i" -lt "$N" ]; do
 	printf "%d. struct_id=%s; ba=%s\n" "$i" "$struct_id" "$ba"
 	#
 	if [ "$ba" ]; then
-		psql -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'BA', $ba, '$ifile_name')"
+		psql -q -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'BA', $ba, '$ifile_name')"
 	fi
 done
 ###
@@ -167,16 +176,16 @@ while [ "$i" -lt "$N" ]; do
 	printf "%d. struct_id=%s; vd=%s; cl=%s; fu=%s; t_half=%s\n" "$i" "$struct_id" "$vd" "$cl" "$fu" "$t_half"
 	#
 	if [ "$vd" ]; then
-		psql -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'Vd', $vd, '$ifile_name')"
+		psql -q -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'Vd', $vd, '$ifile_name')"
 	fi
 	if [ "$cl" ]; then
-		psql -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'CL', $cl, '$ifile_name')"
+		psql -q -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'CL', $cl, '$ifile_name')"
 	fi
 	if [ "$fu" ]; then
-		psql -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'fu', $fu, '$ifile_name')"
+		psql -q -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 'fu', $fu, '$ifile_name')"
 	fi
 	if [ "$t_half" ]; then
-		psql -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 't_half', $t_half, '$ifile_name')"
+		psql -q -d $DBNAME -c "INSERT INTO property (struct_id, property_type_symbol, value, source) VALUES ($struct_id, 't_half', $t_half, '$ifile_name')"
 	fi
 done
 #
@@ -190,13 +199,14 @@ for table in $tables ; do
 	psql -qAF ',' -d $DBNAME -c "SELECT table_name,column_name,data_type FROM information_schema.columns WHERE table_schema='$SCHEMA' AND table_name='$table'"
 done
 #
-#sudo -u postgres psql -c "ALTER USER $USER WITH NOSUPERUSER"
 ###
-N_refs_start=$(psql -d $DBNAME -c "SELECT COUNT(DISTINCT id) FROM reference")
+#
+###
+N_refs_start=$(psql -t -d $DBNAME -c "SELECT COUNT(DISTINCT id) FROM reference")
 printf "Refs: %d\n" "$N_refs_start"
 #
 # References:
-# PMIDs: 
+# PMIDs: (21818695, 15546675, 26589308, 24306326, 30115648)
 # 21818695: Benet LZ, Broccatelli F, Oprea TI
 # 15546675: Hosey CM, Chan R, Benet LZ
 # 26589308: Contrera JF, Matthews EJ, Kruhlak NL, Benz RD
@@ -212,53 +222,47 @@ while [ "$i" -lt "$N" ]; do
 	i=$(($i + 1))
 	ii=$(($i + 1))
 	line=$(cat $reffile |grep -v '^\s*$' |sed "${ii}q;d")
-	pmid=$(echo "$line" |awk -F '\t' '{print $2}' |sed -e 's/\s//g')
-	doi=$(echo "$line" |awk -F '\t' '{print $3}' |sed -e 's/\s//g')
-	reftype=$(echo "$line" |awk -F '\t' '{print $5}' |sed -e 's/\s//g')
-	authors=$(echo "$line" |awk -F '\t' '{print $6}' |sed -e 's/\s//g')
-	title=$(echo "$line" |awk -F '\t' '{print $7}' |sed -e 's/\s//g')
-	isbn10=$(echo "$line" |awk -F '\t' '{print $8}' |sed -e 's/\s//g')
-	url=$(echo "$line" |awk -F '\t' '{print $9}' |sed -e 's/\s//g')
-	journal=$(echo "$line" |awk -F '\t' '{print $10}' |sed -e 's/\s//g')
-	volume=$(echo "$line" |awk -F '\t' '{print $11}' |sed -e 's/\s//g')
-	issue=$(echo "$line" |awk -F '\t' '{print $12}' |sed -e 's/\s//g')
-	dp_year=$(echo "$line" |awk -F '\t' '{print $13}' |sed -e 's/\s//g')
-	pages=$(echo "$line" |awk -F '\t' '{print $14}' |sed -e 's/\s//g')
-	printf "%d. pmid=%s; doi=%s; reftype=%s; authors=%s; title=%s; isbn10=%s; url=%s; journal=%s; volume=%s; issue=%s; dp_year=%s; pages=%s\n" "$i" "$pmid" "$doi" "$reftype" "$authors" "$title" "$isbn10" "$url" "$journal" "$volume" "$issue" "$dp_year" "$pages"
+	pmid=$(echo "$line" |awk -F '\t' '{print $2}')
+	doi=$(echo "$line" |awk -F '\t' '{print $3}')
+	reftype=$(echo "$line" |awk -F '\t' '{print $5}')
+	authors=$(echo "$line" |awk -F '\t' '{print $6}')
+	title=$(echo "$line" |awk -F '\t' '{print $7}')
+	isbn10=$(echo "$line" |awk -F '\t' '{print $8}')
+	url=$(echo "$line" |awk -F '\t' '{print $9}')
+	journal=$(echo "$line" |awk -F '\t' '{print $10}')
+	volume=$(echo "$line" |awk -F '\t' '{print $11}')
+	issue=$(echo "$line" |awk -F '\t' '{print $12}')
+	dp_year=$(echo "$line" |awk -F '\t' '{print $13}')
+	pages=$(echo "$line" |awk -F '\t' '{print $14}')
+	printf "%d. pmid=\"%s\"; doi=\"%s\"; reftype=\"%s\"; authors=\"%s\"; title=\"%s\"; isbn10=\"%s\"; url=\"%s\"; journal=\"%s\"; volume=\"%s\"; issue=\"%s\"; dp_year=\"%s\"; pages=\"%s\"\n" "$i" "$pmid" "$doi" "$reftype" "$authors" "$title" "$isbn10" "$url" "$journal" "$volume" "$issue" "$dp_year" "$pages"
 	#
+	ref_id_max=$(psql -t -d $DBNAME -c "SELECT MAX(id) FROM reference")
+	printf "ref_id_max: %d\n" "$ref_id_max"
 	psql -d $DBNAME <<__EOF__ 
-INSERT INTO reference (
-	pmid,
-	doi,
-	type,
-	authors,
-	title,
-	isbn10,
-	url,
-	journal,
-	volume,
-	issue,
-	dp_year,
-	pages)
-VALUES (
+INSERT INTO reference (id, pmid, doi, type, authors, title, url, journal, volume, issue, dp_year, pages)
+SELECT
+	$(($ref_id_max + 1)),
 	$pmid,
 	'$doi',
 	'$reftype',
 	'$authors',
 	'$title',
-	'$isbn10',
 	'$url',
 	'$journal',
 	'$volume',
 	'$issue',
 	'$dp_year',
-	'$pages')
+	'$pages'
 WHERE
-	(SELECT id FROM reference WHERE pmid = $pmid) IS NULL
+	NOT EXISTS (SELECT id FROM reference WHERE pmid = $pmid)
+	;
 __EOF__
+	if [ "$isbn10" ]; then
+		psql -d $DBNAME -c "UPDATE reference SET isbn10 = '$isbn10' WHERE id = $(($ref_id_max + 1))"
+	fi
 done
 #
-N_refs_final=$(psql -d $DBNAME -c "SELECT COUNT(DISTINCT id) FROM reference")
+N_refs_final=$(psql -t -d $DBNAME -c "SELECT COUNT(DISTINCT id) FROM reference")
 printf "Refs: %d\n" "$N_refs_final"
 #
 psql -d $DBNAME -c "UPDATE property SET reference_id = (SELECT id FROM reference WHERE pmid = 21818695) WHERE source = 'benet2009_mapping.tsv'"
