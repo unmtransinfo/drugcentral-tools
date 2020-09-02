@@ -265,10 +265,15 @@ done
 N_refs_final=$(psql -t -d $DBNAME -c "SELECT COUNT(DISTINCT id) FROM reference")
 printf "Refs: %d\n" "$N_refs_final"
 #
-psql -d $DBNAME -c "UPDATE property SET reference_id = (SELECT id FROM reference WHERE pmid = 21818695) WHERE source = 'benet2009_mapping.tsv'"
-psql -d $DBNAME -c "UPDATE property SET reference_id = (SELECT id FROM reference WHERE pmid = 26589308) WHERE source = 'contrera2004_mapping.tsv'"
-psql -d $DBNAME -c "UPDATE property SET reference_id = (SELECT id FROM reference WHERE pmid = 15546675) WHERE source = 'hosey2016_mapping.tsv'"
-psql -d $DBNAME -c "UPDATE property SET reference_id = (SELECT id FROM reference WHERE pmid = 24306326) WHERE source = 'kim2014_mapping.tsv'"
-psql -d $DBNAME -c "UPDATE property SET reference_id = (SELECT id FROM reference WHERE pmid = 30115648) WHERE source = 'lombardo2018_mapping.tsv'"
+psql -d $DBNAME -c "UPDATE property SET (reference_id, reference_type) = (SELECT id,type FROM reference WHERE pmid = 21818695) WHERE source = 'benet2009_mapping.tsv'"
+psql -d $DBNAME -c "UPDATE property SET (reference_id, reference_type) = (SELECT id,type FROM reference WHERE pmid = 26589308) WHERE source = 'contrera2004_mapping.tsv'"
+psql -d $DBNAME -c "UPDATE property SET (reference_id, reference_type) = (SELECT id,type FROM reference WHERE pmid = 15546675) WHERE source = 'hosey2016_mapping.tsv'"
+psql -d $DBNAME -c "UPDATE property SET (reference_id, reference_type) = (SELECT id,type FROM reference WHERE pmid = 24306326) WHERE source = 'kim2014_mapping.tsv'"
+psql -d $DBNAME -c "UPDATE property SET (reference_id, reference_type) = (SELECT id,type FROM reference WHERE pmid = 30115648) WHERE source = 'lombardo2018_mapping.tsv'"
 #
-
+###
+proptype_symbols=$(psql -t -d $DBNAME -c "SELECT DISTINCT symbol FROM property_type")
+for symb in $proptype_symbols ; do
+	psql -d $DBNAME -c "UPDATE property SET property_type_id = (SELECT id FROM property_type WHERE symbol = '$symb') WHERE property_type_symbol = '$symb'"
+done
+#
