@@ -12,6 +12,7 @@ function strstrip {
 #
 psql -d $DBNAME -c "ALTER TABLE structures DROP COLUMN status"
 psql -d $DBNAME -c "ALTER TABLE structures ADD COLUMN status varchar(10)"
+psql -d $DBNAME -c "COMMENT ON COLUMN structures.status IS 'Added by Go_dc_SetPatch.sh for OrangeBook sets (OFP, ONP, OFM) from 2020 paper.'"
 ###
 # Set	DrugCentral_ID	Name
 ifile_name="SI_Sets_OBSET2STRUCT.tsv"

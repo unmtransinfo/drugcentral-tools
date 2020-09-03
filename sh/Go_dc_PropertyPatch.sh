@@ -28,6 +28,9 @@ CREATE TABLE property (
     source varchar(80)
 );
 __EOF__
+#
+psql -d $DBNAME -c "COMMENT ON TABLE property_type IS 'Property types from Giovanni Bocci, added via Go_dc_PropertyPatch.sh'"
+psql -d $DBNAME -c "COMMENT ON TABLE property IS 'Properties from Giovanni Bocci, added via Go_dc_PropertyPatch.sh'"
 ###
 #
 psql -d $DBNAME -c "CREATE ROLE drugman WITH LOGIN PASSWORD 'dosage'"
