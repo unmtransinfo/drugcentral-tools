@@ -2,7 +2,7 @@
 ###
 # From DrugCentral IDs, get ChEMBL targets via activities.
 # Note: in many cases, multiple CHEMBL_MOLECULE_IDs per DC struct_id.
-
+###
 cwd=$(pwd)
 DATADIR=${cwd}/data
 #
@@ -32,10 +32,11 @@ ${cwd}/python/pandas_utils.py selectcols \
 	--o $DATADIR/dc_struct_chembl_tgt.tsv
 ${cwd}/python/pandas_utils.py deduplicate \
 	--i $DATADIR/dc_struct_chembl_tgt.tsv \
-	--o $DATADIR/dc_struct_chembl_tgt.tsv
+	--o $DATADIR/dc_struct_chembl_tgt_dedup.tsv
+mv $DATADIR/dc_struct_chembl_tgt_dedup.tsv $DATADIR/dc_struct_chembl_tgt.tsv
+#
 cat $DATADIR/dc_struct_chembl_tgt.tsv \
-	|sed -e '1d' \
-	|awk -F '\t' '{print $1}' \
+	|sed -e '1d' |awk -F '\t' '{print $1}' \
 	|sort -u \
 	>$DATADIR/dc_struct_chembl_tgt.chemblid
 #
