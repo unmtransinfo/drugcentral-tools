@@ -1,6 +1,8 @@
 #!/bin/bash
 #
-SRCDATADIR="${HOME}/../data/DrugCentral/PropertyPatch"
+T0=$(date +%s)
+#
+SRCDATADIR="$(cd $HOME/.. ; pwd)/data/DrugCentral/PropertyPatch"
 #
 DBNAME="drugcentral"
 SCHEMA="public"
@@ -29,8 +31,8 @@ CREATE TABLE property (
 );
 __EOF__
 #
-psql -d $DBNAME -c "COMMENT ON TABLE property_type IS 'Property types from Giovanni Bocci, added via Go_dc_PropertyPatch.sh'"
-psql -d $DBNAME -c "COMMENT ON TABLE property IS 'Properties from Giovanni Bocci, added via Go_dc_PropertyPatch.sh'"
+psql -d $DBNAME -c "COMMENT ON TABLE property_type IS 'Property types from Giovanni Bocci, added via $(basename $0)'"
+psql -d $DBNAME -c "COMMENT ON TABLE property IS 'Properties from Giovanni Bocci, added via $(basename $0)'"
 ###
 #
 psql -d $DBNAME -c "CREATE ROLE drugman WITH LOGIN PASSWORD 'dosage'"
@@ -57,19 +59,19 @@ __EOF__
 #
 #sudo -u postgres psql -c "ALTER USER $USER WITH NOSUPERUSER"
 ###
-psql -d $DBNAME -Atc "select * from property_type"
+psql -d $DBNAME -Atc "SELECT * FROM property_type"
 #
 ###
 # Benet
 # DC.ID   SMILES  NAME    BDDCS   S (mg/mL)       EoM (%)
 ifile_name="benet2009_mapping.tsv"
 ifile="$SRCDATADIR/$ifile_name"
-N=$(($(cat $ifile |grep -v '^\s*$' |wc -l) - 1))
+N=$[$(cat $ifile |grep -v '^\s*$' |wc -l) - 1]
 printf "Loading %s: %d rows\n" "$ifile" "$N"
 i=0
 while [ "$i" -lt "$N" ]; do
-	i=$(($i + 1))
-	ii=$(($i + 1))
+	i=$[$i + 1]
+	ii=$[$i + 1]
 	line=$(cat $ifile |grep -v '^\s*$' |sed "${ii}q;d")
 	struct_id=$(echo "$line" |awk -F '\t' '{print $1}')
 	bddcs=$(echo "$line" |awk -F '\t' '{print $4}'|sed -e 's/\s//g')
@@ -94,12 +96,12 @@ done
 # DC.ID   SMILES  NAME    MRTD (µM/kg/day)
 ifile_name="contrera2004_mapping.tsv"
 ifile="$SRCDATADIR/$ifile_name"
-N=$(($(cat $ifile |grep -v '^\s*$' |wc -l) - 1))
+N=$[$(cat $ifile |grep -v '^\s*$' |wc -l) - 1]
 printf "Loading %s: %d rows\n" "$ifile" "$N"
 i=0
 while [ "$i" -lt "$N" ]; do
-	i=$(($i + 1))
-	ii=$(($i + 1))
+	i=$[$i + 1]
+	ii=$[$i + 1]
 	line=$(cat $ifile |grep -v '^\s*$' |sed "${ii}q;d")
 	struct_id=$(echo "$line" |awk -F '\t' '{print $1}')
 	mrtd=$(echo "$line" |awk -F '\t' '{print $4}'|sed -e 's/\s//g')
@@ -115,12 +117,12 @@ done
 # DC.ID   SMILES  NAME    BDDCS   S (mg/mL)       EoM (%)
 ifile_name="hosey2016_mapping.tsv"
 ifile="$SRCDATADIR/$ifile_name"
-N=$(($(cat $ifile |grep -v '^\s*$' |wc -l) - 1))
+N=$[$(cat $ifile |grep -v '^\s*$' |wc -l) - 1]
 printf "Loading %s: %d rows\n" "$ifile" "$N"
 i=0
 while [ "$i" -lt "$N" ]; do
-	i=$(($i + 1))
-	ii=$(($i + 1))
+	i=$[$i + 1]
+	ii=$[$i + 1]
 	line=$(cat $ifile |grep -v '^\s*$' |sed "${ii}q;d")
 	struct_id=$(echo "$line" |awk -F '\t' '{print $1}'|sed -e 's/\s//g')
 	bddcs=$(echo "$line" |awk -F '\t' '{print $4}'|sed -e 's/\s//g')
@@ -144,12 +146,12 @@ done
 # DC.ID NAME SMILES CAS_REG_NO BA (%)
 ifile_name="kim2014_mapping.tsv"
 ifile="$SRCDATADIR/$ifile_name"
-N=$(($(cat $ifile |grep -v '^\s*$' |wc -l) - 1))
+N=$[$(cat $ifile |grep -v '^\s*$' |wc -l) - 1]
 printf "Loading %s: %d rows\n" "$ifile" "$N"
 i=0
 while [ "$i" -lt "$N" ]; do
-	i=$(($i + 1))
-	ii=$(($i + 1))
+	i=$[$i + 1]
+	ii=$[$i + 1]
 	line=$(cat $ifile |grep -v '^\s*$' |sed "${ii}q;d")
 	struct_id=$(echo "$line" |awk -F '\t' '{print $1}')
 	ba=$(echo "$line" |awk -F '\t' '{print $5}'|sed -e 's/\s//g')
@@ -164,12 +166,12 @@ done
 # DC.ID   NAME    SMILES  CAS_REG_NO      Vd (L/kg)       CL (mL/min/kg)  fu (%)  t1/2 (h)
 ifile_name="lombardo2018_mapping.tsv"
 ifile="$SRCDATADIR/$ifile_name"
-N=$(($(cat $ifile |grep -v '^\s*$' |wc -l) - 1))
+N=$[$(cat $ifile |grep -v '^\s*$' |wc -l) - 1]
 printf "Loading %s: %d rows\n" "$ifile" "$N"
 i=0
 while [ "$i" -lt "$N" ]; do
-	i=$(($i + 1))
-	ii=$(($i + 1))
+	i=$[$i + 1]
+	ii=$[$i + 1]
 	line=$(cat $ifile |grep -v '^\s*$' |sed "${ii}q;d")
 	struct_id=$(echo "$line" |awk -F '\t' '{print $1}')
 	vd=$(echo "$line" |awk -F '\t' '{print $5}'|sed -e 's/\s//g')
@@ -203,12 +205,18 @@ for table in $tables ; do
 done
 #
 ###
+proptype_symbols=$(psql -t -d $DBNAME -c "SELECT DISTINCT symbol FROM property_type")
+for symb in $proptype_symbols ; do
+	psql -d $DBNAME -c "UPDATE property SET property_type_id = (SELECT id FROM property_type WHERE symbol = '$symb') WHERE property_type_symbol = '$symb'"
+done
 #
 ###
+# REFERENCES:
+psql -d $DBNAME -c "DELETE FROM reference WHERE PMID IN (21818695, 15546675, 26589308, 24306326, 30115648)"
+#
 N_refs_start=$(psql -t -d $DBNAME -c "SELECT COUNT(DISTINCT id) FROM reference")
 printf "Refs: %d\n" "$N_refs_start"
 #
-# References:
 # PMIDs: (21818695, 15546675, 26589308, 24306326, 30115648)
 # 21818695: Benet LZ, Broccatelli F, Oprea TI
 # 15546675: Hosey CM, Chan R, Benet LZ
@@ -218,12 +226,12 @@ printf "Refs: %d\n" "$N_refs_start"
 # id, pmid, doi, document_id, type, authors, title, isbn10, url, journal, volume, issue, dp_year, pages
 reffile_name="PK_references.tsv"
 reffile="$SRCDATADIR/$reffile_name"
-N=$(($(cat $reffile |grep -v '^\s*$' |wc -l) - 1))
+N=$[$(cat $reffile |grep -v '^\s*$' |wc -l) - 1]
 printf "Loading %s: %d rows\n" "$reffile" "$N"
 i=0
 while [ "$i" -lt "$N" ]; do
-	i=$(($i + 1))
-	ii=$(($i + 1))
+	i=$[$i + 1]
+	ii=$[$i + 1]
 	line=$(cat $reffile |grep -v '^\s*$' |sed "${ii}q;d")
 	pmid=$(echo "$line" |awk -F '\t' '{print $2}')
 	doi=$(echo "$line" |awk -F '\t' '{print $3}')
@@ -244,7 +252,7 @@ while [ "$i" -lt "$N" ]; do
 	psql -d $DBNAME <<__EOF__ 
 INSERT INTO reference (id, pmid, doi, type, authors, title, url, journal, volume, issue, dp_year, pages)
 SELECT
-	$(($ref_id_max + 1)),
+	$[$ref_id_max + 1],
 	$pmid,
 	'$doi',
 	'$reftype',
@@ -261,7 +269,8 @@ WHERE
 	;
 __EOF__
 	if [ "$isbn10" ]; then
-		psql -d $DBNAME -c "UPDATE reference SET isbn10 = '$isbn10' WHERE id = $(($ref_id_max + 1))"
+		psql -d $DBNAME -c "UPDATE reference SET isbn10 =
+'$isbn10' WHERE id = $[$ref_id_max + 1]"
 	fi
 done
 #
@@ -275,8 +284,5 @@ psql -d $DBNAME -c "UPDATE property SET (reference_id, reference_type) = (SELECT
 psql -d $DBNAME -c "UPDATE property SET (reference_id, reference_type) = (SELECT id,type FROM reference WHERE pmid = 30115648) WHERE source = 'lombardo2018_mapping.tsv'"
 #
 ###
-proptype_symbols=$(psql -t -d $DBNAME -c "SELECT DISTINCT symbol FROM property_type")
-for symb in $proptype_symbols ; do
-	psql -d $DBNAME -c "UPDATE property SET property_type_id = (SELECT id FROM property_type WHERE symbol = '$symb') WHERE property_type_symbol = '$symb'"
-done
 #
+printf "Elapsed: %ds\n" "$[$(date +%s) - $T0]"
