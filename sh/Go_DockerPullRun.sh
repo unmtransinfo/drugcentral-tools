@@ -12,8 +12,11 @@ fi
 #
 cwd=$(pwd)
 #
+ORG="unmtransinfo"
 INAME_DB="drugcentral_db"
 TAG="latest"
+#
+docker pull $ORG/${INAME_DB}:${TAG}
 #
 APPPORT_DB=5432
 DOCKERPORT_DB=5433
@@ -22,7 +25,7 @@ DOCKERPORT_DB=5433
 docker run -dit --restart always \
 	--name "${INAME_DB}_container" \
 	-p ${DOCKERPORT_DB}:${APPPORT_DB} \
-	${INAME_DB}:${TAG}
+	${ORG}/${INAME_DB}:${TAG}
 #
 docker container ls -a
 #
