@@ -5,6 +5,7 @@ T0=$(date +%s)
 SRCDATADIR="$(cd $HOME/.. ; pwd)/data/DrugCentral/PropertyPatch"
 #
 DBNAME="drugcentral"
+#DBNAME="drugcentral_20200916"
 SCHEMA="public"
 #
 ###
@@ -219,8 +220,8 @@ printf "Refs: %d\n" "$N_refs_start"
 #
 # PMIDs: (21818695, 15546675, 26589308, 24306326, 30115648)
 # 21818695: Benet LZ, Broccatelli F, Oprea TI
-# 15546675: Hosey CM, Chan R, Benet LZ
-# 26589308: Contrera JF, Matthews EJ, Kruhlak NL, Benz RD
+# 26589308: Hosey CM, Chan R, Benet LZ
+# 15546675: Contrera JF, Matthews EJ, Kruhlak NL, Benz RD
 # 24306326: Kim MT, Sedykh A, Chakravarti SK, Saiakhov RD, Zhu H
 # 30115648: Lombardo F, Berellini G, Obach RS
 # id, pmid, doi, document_id, type, authors, title, isbn10, url, journal, volume, issue, dp_year, pages
@@ -278,8 +279,8 @@ N_refs_final=$(psql -t -d $DBNAME -c "SELECT COUNT(DISTINCT id) FROM reference")
 printf "Refs: %d\n" "$N_refs_final"
 #
 psql -d $DBNAME -c "UPDATE property SET (reference_id, reference_type) = (SELECT id,type FROM reference WHERE pmid = 21818695) WHERE source = 'benet2009_mapping.tsv'"
-psql -d $DBNAME -c "UPDATE property SET (reference_id, reference_type) = (SELECT id,type FROM reference WHERE pmid = 26589308) WHERE source = 'contrera2004_mapping.tsv'"
-psql -d $DBNAME -c "UPDATE property SET (reference_id, reference_type) = (SELECT id,type FROM reference WHERE pmid = 15546675) WHERE source = 'hosey2016_mapping.tsv'"
+psql -d $DBNAME -c "UPDATE property SET (reference_id, reference_type) = (SELECT id,type FROM reference WHERE pmid = 15546675) WHERE source = 'contrera2004_mapping.tsv'"
+psql -d $DBNAME -c "UPDATE property SET (reference_id, reference_type) = (SELECT id,type FROM reference WHERE pmid = 26589308) WHERE source = 'hosey2016_mapping.tsv'"
 psql -d $DBNAME -c "UPDATE property SET (reference_id, reference_type) = (SELECT id,type FROM reference WHERE pmid = 24306326) WHERE source = 'kim2014_mapping.tsv'"
 psql -d $DBNAME -c "UPDATE property SET (reference_id, reference_type) = (SELECT id,type FROM reference WHERE pmid = 30115648) WHERE source = 'lombardo2018_mapping.tsv'"
 #
