@@ -1,5 +1,8 @@
 #!/bin/bash
 ###
+# NOT WORKING WITH AWS ECR (YET)! INSTEAD WE ARE RUNNING DOCKER ON GENERIC
+# AWS EC2 INSTANCE, PULLing and RUNning manually.
+###
 if [ $(whoami) != "root" ]; then
 	echo "${0} should be run as root or via sudo."
 	exit

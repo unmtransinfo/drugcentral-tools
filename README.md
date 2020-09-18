@@ -9,7 +9,7 @@ and workflow for Docker container of PostgreSql db.
 
 * Java 1.8
 * Maven 3.5+
-* Docker (Ubuntu 18.04, PostgreSql 10)
+* Docker (Ubuntu 20.04, PostgreSql 10)
 * [CDK \(Chemistry Development Kit\)](https://cdk.github.io/)
 * [JSME \(JavaScript Molecular Editor\)](http://peter-ertl.com/jsme/)
 * [RDKit](http://rdkit.org/)
@@ -20,10 +20,14 @@ and workflow for Docker container of PostgreSql db.
 mvn clean install
 ```
 
-## Docker
+## Docker and DockerHub
 
 * [DockerHub:drugcentral\_db](https://hub.docker.com/repository/docker/unmtransinfo/drugcentral_db)
-* See: `Go_DockerBuild_Db.sh`, `Go_DockerPush_Db.sh`, `Go_DockerRun.sh`
+* See: `Go_DockerBuild.sh`, `Go_DockerPush.sh`, `Go_DockerRun.sh`
+
+## Deploying to public AWS instance
+
+* See: `Go_Ubuntu_DockerInstall.sh`, `Go_DockerHubPull.sh`, `Go_DockerRun.sh`
 
 ## Deploying `DRUGCENTRAL_WAR`
 

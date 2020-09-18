@@ -21,7 +21,7 @@ if [ ! -e "${cwd}/data" ]; then
 	mkdir ${cwd}/data/
 fi
 #
-# pg_dump --no-privileges -Fc -d drugcentral_20200916 >/home/data/DrugCentral/drugcentral_2020.pgdump 
+sudo -u postgres pg_dump --no-privileges -Fc -d drugcentral_20200918 >/home/data/DrugCentral/drugcentral_2020.pgdump 
 cp /home/data/DrugCentral/drugcentral_2018.pgdump ${cwd}/data/
 cp /home/data/DrugCentral/drugcentral_2020.pgdump ${cwd}/data/
 #
