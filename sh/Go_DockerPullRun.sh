@@ -37,18 +37,4 @@ sleep 10
 ###
 # Test db.
 docker exec "${INAME_DB}_container" sudo -u postgres psql -l
-docker exec "${INAME_DB}_container" sudo -u postgres psql -d drugcentral -c "SELECT table_name FROM information_schema.tables WHERE table_schema='public'"
-###
-# Test
-#
-DOCKERHOST="localhost"
-psql -h $DOCKERHOST -p 5433 -U drugman -l
-psql -h $DOCKERHOST -p 5433 -U drugman -d drugcentral
-#
-python3 -m BioClients.drugcentral.Client -h
-python3 -m BioClients.drugcentral.Client version \
-	--dbhost $DOCKERHOST --dbname drugcentral --dbusr drugman --dbpw dosage
-
-python3 -m BioClients.drugcentral.Client counts \
-	--dbhost $DOCKERHOST --dbname drugcentral --dbusr drugman --dbpw dosage
 #
