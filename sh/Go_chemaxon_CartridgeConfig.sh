@@ -15,6 +15,9 @@
 #sudo -u postgres psql -d chemaxon -c "SELECT 'C'::Molecule('sample') |<| 'CC'::Molecule"
 ###
 # Modify existing drugcentral db:
+# Molecule type "sample" defined by /etc/chemaxon/types/sample.type
+# Create custom types standardizer options as needed.
+#
 DBNAME="drugcentral"
 #
 sudo -u postgres psql -d $DBNAME -c "CREATE EXTENSION chemaxon_type"
@@ -32,4 +35,7 @@ psql -qAF $'\t' -d $DBNAME -c "SELECT name,smiles FROM structures WHERE 'NCCc1cc
 psql -qAF $'\t' -d $DBNAME -c "SELECT name,smiles FROM structures WHERE 'NCCc1ccc(O)c(O)c1'::Molecule |>| cx_mol"
 psql -qAF $'\t' -d $DBNAME -c "SELECT name,smiles FROM structures WHERE 'NCCc1ccc(O)c(O)c1'::Molecule |<| cx_mol ORDER BY cd_molweight LIMIT 10"
 psql -qAF $'\t' -d $DBNAME -c "SELECT name, smiles, (cx_mol |~| '${qsmi}') AS similarity FROM structures WHERE ('${qsmi}', 0.6)::sim_filter |<~| cx_mol ORDER BY similarity DESC LIMIT 10"
+#
+psql -qAF $'\t' -d $DBNAME -c "SELECT molconvert(cx_mol,'sdf') FROM structures WHERE name = 'dopamine'"
+psql -qAF $'\t' -d $DBNAME -c "SELECT molconvert(standardize('C1=CC=CC=C1CC[N+](=O)[O-]'::Molecule('sample'))::Molecule('sample'), 'smiles')"
 #
