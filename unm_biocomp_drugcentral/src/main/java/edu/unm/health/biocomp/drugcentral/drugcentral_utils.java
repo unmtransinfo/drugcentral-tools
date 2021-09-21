@@ -20,7 +20,7 @@ import edu.unm.health.biocomp.util.*; //time_utils
 import edu.unm.health.biocomp.util.db.*; //DBCon
 import edu.unm.health.biocomp.text.*; //Name,NameList
 
-/**	Utilities for DrugCentral (DC) queries and admin.
+/**	Utilities for DrugCentral queries and admin.
 
 	Links:
 	 - STRUCTURES to SYNONYMS (1-to-many)
@@ -35,7 +35,7 @@ import edu.unm.health.biocomp.text.*; //Name,NameList
 	one product.  Ingredients are substances which could be a mixture but have
 	a single active moiety, defined in structures table.
 */
-public class dc_utils
+public class drugcentral_utils
 {
   /////////////////////////////////////////////////////////////////////////////
   public static void DescribeQuery(DCQuery dbquery)

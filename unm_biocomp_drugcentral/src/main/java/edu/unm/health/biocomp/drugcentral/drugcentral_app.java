@@ -41,7 +41,7 @@ import edu.unm.health.biocomp.text.*; //Name,NameList
 	one product.  Ingredients are substances which could be a mixture but have
 	a single active moiety, defined in structures table.
 */
-public class dc_app
+public class drugcentral_app
 {
   private static String APPNAME="DRUGCENTRAL";
   private static String dbname="drugcentral";
@@ -171,27 +171,30 @@ public class dc_app
     java.util.Date t_0 = new java.util.Date();
 
     DBCon dbcon = null;
-    try { dbcon = new DBCon("postgres", dbhost, dbport, dbname, dbusr, dbpw); }
+    try {
+      if (verbose>0) System.err.println("postgres:"+dbhost+":"+dbport+"/"+dbname+":"+dbusr+":"+dbpw);
+      dbcon = new DBCon("postgres", dbhost, dbport, dbname, dbusr, dbpw);
+    }
     catch (Exception e) { helper.printHelp(APPNAME, HELPHEADER, opts, e.getMessage()); System.exit(1); }
 
     if (verbose>0)
       System.err.println("Connection ok: "+dbname+"@"+dbhost);
 
     DCQuery dbquery = (query==null) ? null : new DCQuery(query.trim());
-    if (verbose>0 && dbquery!=null) dc_utils.DescribeQuery(dbquery);
+    if (verbose>0 && dbquery!=null) drugcentral_utils.DescribeQuery(dbquery);
 
     StringBuilder log = new StringBuilder();
 
     if (clic.hasOption("describe"))
     {
-      dc_utils.DBDescribe(dbcon, fout_writer);
+      drugcentral_utils.DBDescribe(dbcon, fout_writer);
     }
     else if (clic.hasOption("get_cpd"))
     {
       if (id==null) { helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: -get requires -id."); System.exit(1); }
-      DCCompound cpd = dc_utils.GetCompound(dbcon, new DCQuery(String.format("%d[cid]", id)), log);
+      DCCompound cpd = drugcentral_utils.GetCompound(dbcon, new DCQuery(String.format("%d[cid]", id)), log);
       if (cpd!=null)
-        dc_utils.ResultCompound(cpd, true, fout_writer);
+        drugcentral_utils.ResultCompound(cpd, true, fout_writer);
       else System.out.println("No compound found.");
     }
     else if (clic.hasOption("search_cpds"))
@@ -203,33 +206,33 @@ opts, "ERROR: empty query string."); System.exit(1); }
 HELPHEADER, opts, "ERROR: query must be 3+ characters."); System.exit(1); }
       if (extidtype!=null) dbquery.setExtIdType(extidtype);
       CompoundList cpds = null;
-      try { cpds = dc_utils.SearchCompounds(dbcon,dbquery,log); }
+      try { cpds = drugcentral_utils.SearchCompounds(dbcon,dbquery,log); }
       catch (Exception e) { System.err.println(e.toString()); }
-      if (cpds!=null && cpds.size()>0) dc_utils.ResultCompounds(cpds, fout_writer);
+      if (cpds!=null && cpds.size()>0) drugcentral_utils.ResultCompounds(cpds, fout_writer);
       else System.out.println("No compounds found.");
     }
     else if (clic.hasOption("get_cpd_activity"))
     {
       if (id==null) { helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: -get requires -id."); System.exit(1); }
-      DCCompound cpd = dc_utils.GetCompound(dbcon, new DCQuery(String.format("%d[cid]", id)), log);
-      ResultSet rset = dc_utils.GetCompoundActivities(dbcon, cpd.getDCID());
-      dc_utils.ResultSet2CompoundActivities(rset, cpd);
-      dc_utils.ResultCompoundActivities(cpd, fout_writer);
+      DCCompound cpd = drugcentral_utils.GetCompound(dbcon, new DCQuery(String.format("%d[cid]", id)), log);
+      ResultSet rset = drugcentral_utils.GetCompoundActivities(dbcon, cpd.getDCID());
+      drugcentral_utils.ResultSet2CompoundActivities(rset, cpd);
+      drugcentral_utils.ResultCompoundActivities(cpd, fout_writer);
     }
     else if (clic.hasOption("get_product"))
     {
       if (id==null) { helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: -get requires -id."); System.exit(1); }
-      DCProduct product = dc_utils.GetProduct(dbcon, new DCQuery(String.format("%d[pid]", id)), log);
+      DCProduct product = drugcentral_utils.GetProduct(dbcon, new DCQuery(String.format("%d[pid]", id)), log);
       if (product!=null)
-        dc_utils.ResultProduct(product, fout_writer);
+        drugcentral_utils.ResultProduct(product, fout_writer);
     }
     else if (clic.hasOption("search_products"))
     {
       if (dbquery==null) { helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: -search requires -query."); System.exit(1); }
       if (dbquery.getText().isEmpty()) { helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: empty query string."); System.exit(1); }
       else if (dbquery.toString().length()<3) { helper.printHelp(APPNAME, HELPHEADER, opts, "ERROR: query must be 3+ characters."); System.exit(1); }
-      ProductList products = dc_utils.SearchProducts(dbcon, dbquery, log);
-      if (products!=null) dc_utils.ResultProducts(products, fout_writer);
+      ProductList products = drugcentral_utils.SearchProducts(dbcon, dbquery, log);
+      if (products!=null) drugcentral_utils.ResultProducts(products, fout_writer);
     }
     else
     {

@@ -32,7 +32,7 @@ import edu.unm.health.biocomp.text.*; //Name,NameList
 	Compound name search ranks COMPOUND name matches above synonyms.
 	Sub-structure hits sorted by size.  Similarity-structure hits sorted by similiarity.
 */
-public class dc_servlet extends HttpServlet
+public class drugcentral_servlet extends HttpServlet
 {
   private static String SERVLETNAME=null;
   private static String CONTEXTPATH=null;
@@ -70,12 +70,12 @@ public class dc_servlet extends HttpServlet
   {
     SERVERPORT = request.getServerPort();
     SERVERNAME = request.getServerName();
-    if (SERVERNAME.equals("localhost")) SERVERNAME=InetAddress.getLocalHost().getHostAddress();
+    if (SERVERNAME.equals("localhost")) SERVERNAME = InetAddress.getLocalHost().getHostAddress();
     REMOTEHOST = request.getHeader("X-Forwarded-For"); // client (original)
     if (REMOTEHOST!=null)
     {
-      String[] addrs=Pattern.compile(",").split(REMOTEHOST);
-      if (addrs.length>0) REMOTEHOST=addrs[addrs.length-1];
+      String[] addrs = Pattern.compile(",").split(REMOTEHOST);
+      if (addrs.length>0) REMOTEHOST = addrs[addrs.length-1];
     }
     else
     {
@@ -86,18 +86,18 @@ public class dc_servlet extends HttpServlet
     MultipartRequest mrequest=null;
     if (request.getMethod().equalsIgnoreCase("POST"))
     {
-      try { mrequest=new MultipartRequest(request, UPLOADDIR, 10*1024*1024, "ISO-8859-1", new DefaultFileRenamePolicy()); }
+      try { mrequest = new MultipartRequest(request, UPLOADDIR, 10*1024*1024, "ISO-8859-1", new DefaultFileRenamePolicy()); }
       catch (IOException lEx) { this.getServletContext().log("Not a valid MultipartRequest.", lEx); }
     }
 
     // main logic:
     ArrayList<String> cssincludes = new ArrayList<String>(Arrays.asList(PROXY_PREFIX+CONTEXTPATH+"/css/biocomp.css"));
     ArrayList<String> jsincludes = new ArrayList<String>(Arrays.asList(PROXY_PREFIX+CONTEXTPATH+"/js/biocomp.js", PROXY_PREFIX+CONTEXTPATH+"/js/ddtip.js"));
-    boolean ok=Initialize(request, mrequest);
+    boolean ok = Initialize(request, mrequest);
     if (!ok)
     {
       response.setContentType("text/html");
-      out=response.getWriter();
+      out = response.getWriter();
       out.println(HtmUtils.HeaderHtm(APPNAME, jsincludes, cssincludes, JavaScript(), "", color1, request));
       out.println(HtmUtils.FooterHtm(errors,true));
       return;
@@ -105,7 +105,7 @@ public class dc_servlet extends HttpServlet
     else if (request.getParameter("help")!=null)	// GET method, help=TRUE
     {
       response.setContentType("text/html");
-      out=response.getWriter();
+      out = response.getWriter();
       out.println(HtmUtils.HeaderHtm(APPNAME, jsincludes, cssincludes, JavaScript(), "", color1, request));
       out.println(HelpHtm());
       out.println(HtmUtils.FooterHtm(errors,true));
@@ -113,14 +113,14 @@ public class dc_servlet extends HttpServlet
     else if (request.getParameter("test")!=null)	// GET method, test=TRUE
     {
       response.setContentType("text/plain");
-      out=response.getWriter();
+      out = response.getWriter();
       HashMap<String,String> t = new HashMap<String,String>();
       out.print(HtmUtils.TestTxt(APPNAME,t));
     }
     else	//POST or GET method
     {
       response.setContentType("text/html");
-      out=response.getWriter();
+      out = response.getWriter();
       out.println(HtmUtils.HeaderHtm(APPNAME, jsincludes, cssincludes, JavaScript(), "", color1, request));
       java.util.Date t_0 = new java.util.Date();
 
@@ -129,7 +129,7 @@ public class dc_servlet extends HttpServlet
       if (!params.isChecked("noform")) //for popups:
       {
         out.println(FormHtm(mrequest, response));
-        String qhtm=("<TABLE BORDER=\"0\" CELLPADDING=\"5\" CELLSPACING=\"5\">\n");
+        String qhtm = ("<TABLE BORDER=\"0\" CELLPADDING=\"5\" CELLSPACING=\"5\">\n");
         qhtm+=("<TR><TD VALIGN=\"top\"><H2>Query:</H2></TD>\n");
         qhtm+=("<TD VALIGN=\"middle\" BGCOLOR=\"white\"><DIV STYLE=\"font-size:14px; font-family:monospace; font-weight:bold\">");
         if (dbquery.getType().matches("^.*struct$"))
@@ -152,11 +152,11 @@ public class dc_servlet extends HttpServlet
         {
           DCCompound cpd = null;
           try {
-            cpd = dc_utils.GetCompound(DBCON, dbquery, querylog);
+            cpd = drugcentral_utils.GetCompound(DBCON, dbquery, querylog);
             if (params.isChecked("activityreport"))
             {
-              ResultSet rset = dc_utils.GetCompoundActivities(DBCON, cpd.getDCID());
-              dc_utils.ResultSet2CompoundActivities(rset, cpd);
+              ResultSet rset = drugcentral_utils.GetCompoundActivities(DBCON, cpd.getDCID());
+              drugcentral_utils.ResultSet2CompoundActivities(rset, cpd);
             }
           }
           catch (SQLException e) { errors.add("ERROR: "+e.getMessage()); }
@@ -168,14 +168,14 @@ public class dc_servlet extends HttpServlet
         else if (dbquery.getType().equalsIgnoreCase("pid")) //Query type: Get product
         {
           DCProduct prd = null;
-          try { prd = dc_utils.GetProduct(DBCON, dbquery, querylog); }
+          try { prd = drugcentral_utils.GetProduct(DBCON, dbquery, querylog); }
           catch (SQLException e) { errors.add("ERROR: "+e.getMessage()); }
           outputs.add(ResultProductHtm(prd, response));
         }
         else //Query type: Search compounds
         {
           CompoundList cpds = null;
-          try { cpds = dc_utils.SearchCompounds(DBCON, dbquery, querylog); }
+          try { cpds = drugcentral_utils.SearchCompounds(DBCON, dbquery, querylog); }
           catch (Exception e) { errors.add("ERROR: "+e.toString()); }
           outputs.add(ResultCompoundsHtm(cpds, response, N_MAX));
         }
@@ -208,7 +208,7 @@ public class dc_servlet extends HttpServlet
     String logo_htm="<TABLE CELLSPACING=5 CELLPADDING=5><TR><TD>";
     String imghtm=("<IMG BORDER=0 SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/biocomp_logo_only.gif\">");
     String tiphtm=(APPNAME+" web app from UNM Translational Informatics.");
-    String href=("http://datascience.unm.edu/");
+    String href=("https://datascience.unm.edu/");
     logo_htm+=(HtmUtils.HtmTipper(imghtm, tiphtm, href, 200, "white"));
     logo_htm+="</TD><TD>";
     imghtm=("<IMG BORDER=\"0\" HEIGHT=\"60\" SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/cdk_logo.png\">");
@@ -218,12 +218,12 @@ public class dc_servlet extends HttpServlet
     logo_htm+="</TD><TD>";
     imghtm=("<IMG BORDER=0 HEIGHT=\"60\" SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/rdkit_logo.png\">");
     tiphtm=("RDKit");
-    href=("http://rdkit.org/");
+    href=("https://rdkit.org/");
     logo_htm+=(HtmUtils.HtmTipper(imghtm, tiphtm, href, 200, "white"));
     logo_htm+="</TD><TD>";
     imghtm=("<IMG BORDER=0 HEIGHT=\"40\" SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/JSME_logo.png\">");
     tiphtm=("JSME Molecular Editor");
-    href=("http://peter-ertl.com/jsme/");
+    href=("https://peter-ertl.com/jsme/");
     logo_htm+=(HtmUtils.HtmTipper(imghtm, tiphtm, href, 200, "white"));
     logo_htm+="</TD></TR></TABLE>";
     errors.add("<CENTER>"+logo_htm+"</CENTER>");
@@ -248,7 +248,7 @@ public class dc_servlet extends HttpServlet
       if (params.isChecked("verbose"))
         errors.add("connection ok: "+DBNAME+"@"+DBHOST);
       errors.add(pg_utils.ServerStatusTxt(DBCON.getConnection()));
-      errors.add("RDKit (PgSql cartridge) version: "+dc_utils.RDKitVersion(DBCON));
+      errors.add("RDKit (PgSql cartridge) version: "+drugcentral_utils.RDKitVersion(DBCON));
     }
 
     try {
@@ -274,20 +274,21 @@ public class dc_servlet extends HttpServlet
   /////////////////////////////////////////////////////////////////////////////
   private String DbSummaryHtm() throws SQLException
   {
-    Version v = dc_utils.GetVersion(DBCON);
-    String htm="<TABLE CELLSPACING=\"1\" CELLPADDING=\"1\">\n";
-    htm+=("<TR><TD ALIGN=\"right\">version:</TD><TD ALIGN=\"right\" BGCOLOR=\"white\">"+v.version+" ("+v.dtime+")</TD></TR>\n");
-    htm+=("<TR><TD ALIGN=\"right\">compounds:</TD><TD ALIGN=\"right\" BGCOLOR=\"white\">"+dc_utils.CompoundCount(DBCON)+"</TD></TR>\n");
-    htm+=("<TR><TD ALIGN=\"right\">products:</TD><TD ALIGN=\"right\" BGCOLOR=\"white\">"+dc_utils.ProductCount(DBCON)+"</TD></TR>\n");
-    htm+=("<TR><TD ALIGN=\"right\">targets:</TD><TD ALIGN=\"right\" BGCOLOR=\"white\">"+dc_utils.TargetCount(DBCON)+"</TD></TR>\n");
-    htm+=("<TR><TD ALIGN=\"right\">activities:</TD><TD ALIGN=\"right\" BGCOLOR=\"white\">"+dc_utils.ActivityCount(DBCON)+"</TD></TR>\n");
-    htm+=("</TABLE>");
+    Version v = drugcentral_utils.GetVersion(DBCON);
+    String htm = (
+      ("<TABLE CELLSPACING=\"1\" CELLPADDING=\"1\">\n")
+      +("<TR><TD ALIGN=\"right\">version:</TD><TD ALIGN=\"right\" BGCOLOR=\"white\">"+v.version+" ("+v.dtime+")</TD></TR>\n")
+      +("<TR><TD ALIGN=\"right\">compounds:</TD><TD ALIGN=\"right\" BGCOLOR=\"white\">"+drugcentral_utils.CompoundCount(DBCON)+"</TD></TR>\n")
+      +("<TR><TD ALIGN=\"right\">products:</TD><TD ALIGN=\"right\" BGCOLOR=\"white\">"+drugcentral_utils.ProductCount(DBCON)+"</TD></TR>\n")
+      +("<TR><TD ALIGN=\"right\">targets:</TD><TD ALIGN=\"right\" BGCOLOR=\"white\">"+drugcentral_utils.TargetCount(DBCON)+"</TD></TR>\n")
+      +("<TR><TD ALIGN=\"right\">activities:</TD><TD ALIGN=\"right\" BGCOLOR=\"white\">"+drugcentral_utils.ActivityCount(DBCON)+"</TD></TR>\n")
+      +("</TABLE>"));
     return htm;
   }
   /////////////////////////////////////////////////////////////////////////////
   private static String FormHtm(MultipartRequest mrequest, HttpServletResponse response) throws IOException
   {
-    String htm=
+    String htm = (
     ("<FORM NAME=\"mainform\" METHOD=POST ACTION=\""+response.encodeURL(SERVLETNAME)+"\"")
     +(" ENCTYPE=\"multipart/form-data\">\n")
     +("<TABLE WIDTH=\"100%\"><TR><TD width=\"25%\"><H1>"+APPNAME+"</H1></TD><TD><DIV STYLE=\"margin-bottom:0\"><B>- approved-drug knowledge-base</B></DIV></TD><TD></TD>\n")
@@ -306,7 +307,7 @@ public class dc_servlet extends HttpServlet
     +("<BUTTON TYPE=BUTTON onClick=\"StartJSME()\"><DIV STYLE=\"font-size:9px\">JSME</DIV></BUTTON><BR>\n")
     +("<BUTTON TYPE=\"button\" onClick=\"go_dc(this.form)\"><DIV STYLE=\"font-size:14px; font-weight:bold\">Go "+APPNAME+"</DIV></BUTTON>\n")
     +("<P>\n")
-    +("<SMALL>Examples: ");
+    +("<SMALL>Examples: "));
 
     //Square brackets now invalid for URLs, per RFC 7230 and RFC 3986.
     //Encode as %5B and %5D.
@@ -338,9 +339,9 @@ public class dc_servlet extends HttpServlet
     else
       imghtm=((cpd.getSmiles()!=null)?HtmUtils.Smi2ImgHtm(cpd.getSmiles(), depictopts, 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_smi2img"):"");
 
-    thtm+=("<TR><TD ALIGN=\"right\"></TD><TD BGCOLOR=\"white\" ALIGN=\"center\">"+imghtm+"</TD></TR>\n");
-    thtm+=("<TR><TD ALIGN=\"right\">MF</TD><TD BGCOLOR=\"white\">"+cpd.getMolformula()+"</TD></TR>\n");
-    thtm+=("<TR><TD ALIGN=\"right\">MWT</TD><TD BGCOLOR=\"white\">"+String.format("%.2f", cpd.getMwt())+"</TD></TR>\n");
+    thtm+=(("<TR><TD ALIGN=\"right\"></TD><TD BGCOLOR=\"white\" ALIGN=\"center\">"+imghtm+"</TD></TR>\n")
+      +("<TR><TD ALIGN=\"right\">MF</TD><TD BGCOLOR=\"white\">"+cpd.getMolformula()+"</TD></TR>\n")
+      +("<TR><TD ALIGN=\"right\">MWT</TD><TD BGCOLOR=\"white\">"+String.format("%.2f", cpd.getMwt())+"</TD></TR>\n"));
     if (!cpd.isLarge())
       thtm+=("<TR><TD ALIGN=\"right\">Smiles</TD><TD BGCOLOR=\"white\">"+cpd.getSmiles()+"</TD></TR>\n");
 
@@ -436,20 +437,19 @@ public class dc_servlet extends HttpServlet
     for (DCProduct prd: cpd.getProductList().getAllSortedByRelevance())
     {
       ++i_prd;
-      thtm2+=("<TR>\n");
-      thtm2+=("<TD><A HREF=\"javascript:void(0)\" onClick=\"javascript:go_popup('"+response.encodeURL(SERVLETNAME)+"?query="+prd.getID()+"%5Bpid%5D&noform=TRUE','productwin','width=700,height=800,scrollbars=1,resizable=1')\">"+prd.getID()+"</A></TD>\n");
-      thtm2+=("<TD>"+prd.getProductname()+"</TD>\n");
-      thtm2+=("<TD>"+prd.getGenericname()+"</TD>\n");
-      thtm2+=("<TD>"+prd.getNdc()+"</TD>\n");
-      thtm2+=("<TD>"+prd.getForm()+"</TD>\n");
-      thtm2+=("<TD>"+prd.getRoute()+"</TD>\n");
-      thtm2+=("<TD>"+prd.getStatus()+"</TD>\n");
-      thtm2+=("<TD>"+prd.getIngredientCount()+"</TD>\n");
-      thtm2+=("</TR>\n");
+      thtm2+=(("<TR>\n")
+        +("<TD><A HREF=\"javascript:void(0)\" onClick=\"javascript:go_popup('"+response.encodeURL(SERVLETNAME)+"?query="+prd.getID()+"%5Bpid%5D&noform=TRUE','productwin','width=700,height=800,scrollbars=1,resizable=1')\">"+prd.getID()+"</A></TD>\n")
+        +("<TD>"+prd.getProductname()+"</TD>\n")
+        +("<TD>"+prd.getGenericname()+"</TD>\n")
+        +("<TD>"+prd.getNdc()+"</TD>\n")
+        +("<TD>"+prd.getForm()+"</TD>\n")
+        +("<TD>"+prd.getRoute()+"</TD>\n")
+        +("<TD>"+prd.getStatus()+"</TD>\n")
+        +("<TD>"+prd.getIngredientCount()+"</TD>\n")
+        +("</TR>\n"));
     }
     thtm2+="</TABLE>\n";
     thtm+="<TR><TD ALIGN=\"right\" VALIGN=\"top\">Products ("+i_prd+")</TD><TD BGCOLOR=\"white\">"+((i_prd>0)?thtm2:"None")+"</TD></TR>\n";
-
     thtm+="</TABLE>\n";
     htm+=thtm;
     return htm;
@@ -472,11 +472,11 @@ public class dc_servlet extends HttpServlet
       DCTarget tgt = act.getTarget();
       String rhtm="";
 
-      rhtm=("<TR>");
-      rhtm+=("<TD "+(got_moa?"ROWSPAN=\"2\" ":"")+"ALIGN=\"right\">"+(i_act)+"</TD>\n");
-      rhtm+=("<TD "+(got_moa?"ROWSPAN=\"2\" ":"")+"BGCOLOR=\""+bgcolor+"\">"+tgt.getName()+" ["+tgt.getID()+"]</TD>\n");
-      rhtm+=("<TD "+(got_moa?"ROWSPAN=\"2\" ":"")+"BGCOLOR=\""+bgcolor+"\">"+act.getType()+"</TD>\n");
-      rhtm+=("<TD "+(got_moa?"ROWSPAN=\"2\" ":"")+"BGCOLOR=\""+bgcolor+"\"> "+(String.valueOf(act.getRelation()).matches("[><]")?act.getRelation():"")+String.format("%.3f%s",act.getValue(), ((act.getUnit()!=null)?act.getUnit():""))+"</TD>\n");
+      rhtm=(("<TR>")
+        +("<TD "+(got_moa?"ROWSPAN=\"2\" ":"")+"ALIGN=\"right\">"+(i_act)+"</TD>\n")
+        +("<TD "+(got_moa?"ROWSPAN=\"2\" ":"")+"BGCOLOR=\""+bgcolor+"\">"+tgt.getName()+" ["+tgt.getID()+"]</TD>\n")
+        +("<TD "+(got_moa?"ROWSPAN=\"2\" ":"")+"BGCOLOR=\""+bgcolor+"\">"+act.getType()+"</TD>\n")
+        +("<TD "+(got_moa?"ROWSPAN=\"2\" ":"")+"BGCOLOR=\""+bgcolor+"\"> "+(String.valueOf(act.getRelation()).matches("[><]")?act.getRelation():"")+String.format("%.3f%s",act.getValue(), ((act.getUnit()!=null)?act.getUnit():""))+"</TD>\n"));
       if (got_moa)
         rhtm+=("<TD ROWSPAN=\"2\" BGCOLOR=\""+bgcolor+"\"><B>MOA: "+act.getMoaType()+"</B></TD>\n");
       else
@@ -486,9 +486,9 @@ public class dc_servlet extends HttpServlet
       boolean same_ref = got_moa && act.getSourceUrl().equals(act.getMoaSourceUrl());
       String src = act.getSource();
       if (act.getSourceUrl()!=null) src=("<A TARGET=\"_blank\" HREF=\""+act.getSourceUrl()+"\">"+src+"</A>");
-      rhtm+=("<TD "+(same_source?"ROWSPAN=\"2\" ":"")+"BGCOLOR=\""+bgcolor+"\">"+src+"</TD>\n");
-      rhtm+=("<TD ROWSPAN=\""+(got_moa?"2":"1")+"\" BGCOLOR=\""+bgcolor+"\">"+((act.getComment()!=null)?act.getComment():"~")+"</TD>\n");
-      rhtm+=("</TR>\n");
+      rhtm+=(("<TD "+(same_source?"ROWSPAN=\"2\" ":"")+"BGCOLOR=\""+bgcolor+"\">"+src+"</TD>\n")
+        +("<TD ROWSPAN=\""+(got_moa?"2":"1")+"\" BGCOLOR=\""+bgcolor+"\">"+((act.getComment()!=null)?act.getComment():"~")+"</TD>\n")
+        +("</TR>\n"));
 
       if (got_moa)
       {
@@ -523,12 +523,12 @@ public class dc_servlet extends HttpServlet
       imghtm = ((product.getMixtureSmiles()!=null)?HtmUtils.Smi2ImgHtm(product.getMixtureSmiles(), depictopts, 180, 320, MOL2IMG_SERVLETURL, true, 4, "go_zoom_smi2img"):"");
       thtm+=("<TR><TD></TD><TD ALIGN=\"center\" BGCOLOR=\"white\">"+imghtm+"</TD></TR>\n");
     }
-    thtm+=("<TR><TD ALIGN=\"right\">Name:</TD><TD BGCOLOR=\"white\">"+product.getProductname()+"</TD></TR>\n");
-    thtm+=("<TR><TD ALIGN=\"right\">Generic name:</TD><TD BGCOLOR=\"white\">"+product.getGenericname()+"</TD></TR>\n");
-    thtm+=("<TR><TD ALIGN=\"right\">NDC:</TD><TD BGCOLOR=\"white\">"+product.getNdc()+"</TD></TR>\n");
-    thtm+=("<TR><TD ALIGN=\"right\">Route:</TD><TD BGCOLOR=\"white\">"+product.getRoute()+"</TD></TR>\n");
-    thtm+=("<TR><TD ALIGN=\"right\">Form:</TD><TD BGCOLOR=\"white\">"+product.getForm()+"</TD></TR>\n");
-    thtm+=("<TR><TD ALIGN=\"right\">Status:</TD><TD BGCOLOR=\"white\">"+product.getStatus()+"</TD></TR>\n");
+    thtm+=(("<TR><TD ALIGN=\"right\">Name:</TD><TD BGCOLOR=\"white\">"+product.getProductname()+"</TD></TR>\n")
+      +("<TR><TD ALIGN=\"right\">Generic name:</TD><TD BGCOLOR=\"white\">"+product.getGenericname()+"</TD></TR>\n")
+      +("<TR><TD ALIGN=\"right\">NDC:</TD><TD BGCOLOR=\"white\">"+product.getNdc()+"</TD></TR>\n")
+      +("<TR><TD ALIGN=\"right\">Route:</TD><TD BGCOLOR=\"white\">"+product.getRoute()+"</TD></TR>\n")
+      +("<TR><TD ALIGN=\"right\">Form:</TD><TD BGCOLOR=\"white\">"+product.getForm()+"</TD></TR>\n")
+      +("<TR><TD ALIGN=\"right\">Status:</TD><TD BGCOLOR=\"white\">"+product.getStatus()+"</TD></TR>\n"));
 
     int i=0;
     for (DCIngredient ingr: product.getIngredients())
@@ -544,17 +544,17 @@ public class dc_servlet extends HttpServlet
         imghtm=HtmUtils.Molfile2ImgHtm(cpd.getMolfile(), depictopts, 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_mdl2img");
       else
         imghtm=((cpd.getSmiles()!=null)?HtmUtils.Smi2ImgHtm(cpd.getSmiles(), depictopts, 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_smi2img"):"");
-      thtm2+="<TR><TD COLSPAN=\"2\" ALIGN=\"center\" BGCOLOR=\"white\">"+imghtm+"</TD></TR>\n";
-      thtm2+="<TR><TD ALIGN=\"right\" VALIGN=\"top\">MF</TD><TD BGCOLOR=\"white\">"+cpd.getMolformula()+"</TD></TR>\n";
-      thtm2+="<TR><TD ALIGN=\"right\" VALIGN=\"top\">MWT</TD><TD BGCOLOR=\"white\">"+String.format("%.1f", cpd.getMwt())+"</TD></TR>\n";
-      thtm2+="<!-- IID = "+ingr.getID()+" -->\n";
-      thtm2+="<TR><TD ALIGN=\"right\" VALIGN=\"top\">CID</TD><TD BGCOLOR=\"white\">"+cpd.getDCID()+"</TD></TR>\n";
-      thtm2+="<TR><TD ALIGN=\"right\" VALIGN=\"top\">Active moiety name</TD><TD BGCOLOR=\"white\">"+ingr.getActivemoietyName()+"</TD></TR>\n";
-      thtm2+="<TR><TD ALIGN=\"right\" VALIGN=\"top\">Active moiety UNII</TD><TD BGCOLOR=\"white\">"+ingr.getActivemoietyUnii()+"</TD></TR>\n";
-      thtm2+="<TR><TD ALIGN=\"right\" VALIGN=\"top\">Substance name</TD><TD BGCOLOR=\"white\">"+ingr.getSubstanceName()+"</TD></TR>\n";
-      thtm2+="<TR><TD ALIGN=\"right\" VALIGN=\"top\">Substance UNII</TD><TD BGCOLOR=\"white\">"+ingr.getSubstanceUnii()+"</TD></TR>\n";
-      thtm2+="<TR><TD ALIGN=\"right\" VALIGN=\"top\">CAS</TD><TD BGCOLOR=\"white\">"+((cpd.getCAS()!=null)?cpd.getCAS():"~")+"</TD></TR>\n";
-      thtm2+="<TR><TD ALIGN=\"right\" VALIGN=\"top\">Quantity</TD><TD BGCOLOR=\"white\">"+ingr.getQuantity()+" ("+ingr.getUnit()+")</TD></TR>\n";
+      thtm2+=(("<TR><TD COLSPAN=\"2\" ALIGN=\"center\" BGCOLOR=\"white\">"+imghtm+"</TD></TR>\n")
+        +("<TR><TD ALIGN=\"right\" VALIGN=\"top\">MF</TD><TD BGCOLOR=\"white\">"+cpd.getMolformula()+"</TD></TR>\n")
+        +("<TR><TD ALIGN=\"right\" VALIGN=\"top\">MWT</TD><TD BGCOLOR=\"white\">"+String.format("%.1f", cpd.getMwt())+"</TD></TR>\n")
+        +("<!-- IID = "+ingr.getID()+" -->\n")
+        +("<TR><TD ALIGN=\"right\" VALIGN=\"top\">CID</TD><TD BGCOLOR=\"white\">"+cpd.getDCID()+"</TD></TR>\n")
+        +("<TR><TD ALIGN=\"right\" VALIGN=\"top\">Active moiety name</TD><TD BGCOLOR=\"white\">"+ingr.getActivemoietyName()+"</TD></TR>\n")
+        +("<TR><TD ALIGN=\"right\" VALIGN=\"top\">Active moiety UNII</TD><TD BGCOLOR=\"white\">"+ingr.getActivemoietyUnii()+"</TD></TR>\n")
+        +("<TR><TD ALIGN=\"right\" VALIGN=\"top\">Substance name</TD><TD BGCOLOR=\"white\">"+ingr.getSubstanceName()+"</TD></TR>\n")
+        +("<TR><TD ALIGN=\"right\" VALIGN=\"top\">Substance UNII</TD><TD BGCOLOR=\"white\">"+ingr.getSubstanceUnii()+"</TD></TR>\n")
+        +("<TR><TD ALIGN=\"right\" VALIGN=\"top\">CAS</TD><TD BGCOLOR=\"white\">"+((cpd.getCAS()!=null)?cpd.getCAS():"~")+"</TD></TR>\n")
+        +("<TR><TD ALIGN=\"right\" VALIGN=\"top\">Quantity</TD><TD BGCOLOR=\"white\">"+ingr.getQuantity()+" ("+ingr.getUnit()+")</TD></TR>\n"));
 
       //ATCs:
       int i_atc=0;

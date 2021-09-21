@@ -8,16 +8,24 @@ and workflow for Docker container of PostgreSql db.
 ## Dependencies
 
 * Java 1.8
-* Maven 3.5+
+* Maven 3.6+
 * Docker (Ubuntu 20.04, PostgreSql 10)
 * [CDK \(Chemistry Development Kit\)](https://cdk.github.io/)
-* [JSME \(JavaScript Molecular Editor\)](http://peter-ertl.com/jsme/)
-* [RDKit](http://rdkit.org/)
+* [JSME \(JavaScript Molecular Editor\)](https://peter-ertl.com/jsme/)
+* [RDKit](https://rdkit.org/)
 
 ## Compilation
 
 ```
 mvn clean install
+```
+
+## Execution
+
+Command-line app:
+
+```
+mvn --projects unm_biocomp_drugcentral exec:java -Dexec.mainClass="edu.unm.health.biocomp.drugcentral.drugcentral_app" -Dexec.args="-dbhost localhost -dbport 5432 -dbname drugcentral -dbusr drugman -dbpw dosage"
 ```
 
 ## Docker and DockerHub
