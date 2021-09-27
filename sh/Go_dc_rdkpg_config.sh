@@ -5,33 +5,18 @@
 ### Ok: rdkit-Release_2015_03_1, Boost 1.61, OpenSUSE Leap 42.3 (early 2018)
 #############################################################################
 #
+cwd="$(pwd)"
+#
 DBNAME="drugcentral"
 DBSCHEMA="public"
 DBHOST="localhost"
 #
-sudo -u postgres psql -d $DBNAME -c 'create extension rdkit'
+sudo -u postgres psql -d $DBNAME -c 'CREATE EXTENSION rdkit'
 #
 ### Create mols table for RDKit structural searching.
-psql -d $DBNAME <<__EOF__
-SELECT
-	id,
-	mol
-INTO
-	${DBSCHEMA}.mols
-FROM
-	(SELECT
-		id,
-		mol_from_ctab(molfile::cstring) AS mol
-	FROM
-		${DBSCHEMA}.structures
-	) tmp
-WHERE
-	mol IS NOT NULL
-	;
-__EOF__
+psql -d $DBNAME -f ${cwd}/sql/rdk_create_mol_table.sql
 #
 #	mol_from_smiles(regexp_replace(cd_smiles,E'\\\\s+.*$','')::cstring) AS mol
-#
 #
 psql -d $DBNAME -c "CREATE INDEX molidx ON ${DBSCHEMA}.mols USING gist(mol)"
 #
@@ -54,22 +39,5 @@ psql -d $DBNAME -c "CREATE INDEX fps_ttbv_idx ON ${DBSCHEMA}.mols USING gist(tor
 #
 ### Convenience function:
 #
-psql -d $DBNAME <<__EOF__
-CREATE OR REPLACE FUNCTION
-	rdk_simsearch(smiles text)
-RETURNS TABLE(id INTEGER, mol mol, similarity double precision) AS
-	\$\$
-	SELECT
-		id,mol,tanimoto_sml(rdkit_fp(mol_from_smiles(\$1::cstring)),fp) AS similarity
-	FROM
-		${DBSCHEMA}.mols
-	WHERE
-		rdkit_fp(mol_from_smiles(\$1::cstring))%fp
-	ORDER BY
-		rdkit_fp(mol_from_smiles(\$1::cstring))<%>fp
-		;
-	\$\$
-LANGUAGE SQL STABLE
-	;
-__EOF__
+psql -d $DBNAME -f ${cwd}/sql/rdk_create_functions.sql
 #

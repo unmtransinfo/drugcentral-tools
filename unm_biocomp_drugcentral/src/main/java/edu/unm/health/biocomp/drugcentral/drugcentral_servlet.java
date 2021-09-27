@@ -307,13 +307,16 @@ public class drugcentral_servlet extends HttpServlet
     +("<BUTTON TYPE=BUTTON onClick=\"StartJSME()\"><DIV STYLE=\"font-size:9px\">JSME</DIV></BUTTON><BR>\n")
     +("<BUTTON TYPE=\"button\" onClick=\"go_dc(this.form)\"><DIV STYLE=\"font-size:14px; font-weight:bold\">Go "+APPNAME+"</DIV></BUTTON>\n")
     +("<P>\n")
-    +("<SMALL>Examples: "));
+    +("<SMALL>Examples (name): "));
 
     //Square brackets now invalid for URLs, per RFC 7230 and RFC 3986.
     //Encode as %5B and %5D.
     for (String drugname: new String[]{"aspirin", "hydrocortisone", "ketorolac", "prozac", "ranitidine", "rosuvastatin", "tamoxifen", "verapamil"})
       htm+=("&nbsp;<A HREF=\""+response.encodeURL(SERVLETNAME)+"?query="+drugname+"%5Bfulltxt%5D\">"+drugname+"</A>\n");
-
+    htm+=(("<BR>\n")
+      +("<SMALL>Examples (substructure): ")
+      +("&nbsp;<A HREF=\""+response.encodeURL(SERVLETNAME)+"?query=C12CCCC1CCC1C2CCC2=CCCCC12%5Bsubstruct%5D\">steroids</A>\n")
+      +("&nbsp;<A HREF=\""+response.encodeURL(SERVLETNAME)+"?query=N1c2ccccc2C(=NCC1)c1ccccc1%5Bsubstruct%5D\">benzodiazepines</A>\n"));
     htm+=(
      ("<BR>\n<i>For advanced query syntax, see help.</i>\n")
     +("</SMALL></TD></TR></TABLE>\n")
@@ -690,7 +693,7 @@ public class drugcentral_servlet extends HttpServlet
   /////////////////////////////////////////////////////////////////////////////
   private static String JavaScript()
   {
-    return(
+    String js = (
 "var childwins = new Array();\n"+
 "function go_dc(form)\n"+
 "{\n"+
@@ -758,11 +761,12 @@ public class drugcentral_servlet extends HttpServlet
 "  form.query.value=smiles+'[substruct]';\n"+
 "}\n"
     );
+    return js;
   }
   /////////////////////////////////////////////////////////////////////////////
   private static String HelpHtm()
   {
-    return (
+    String htm = (
     "<img align=\"right\" height=\"100\" src=\""+PROXY_PREFIX+CONTEXTPATH+"/images/drugcentral_logo.png\"></CENTER>"+
     "<H1>"+APPNAME+" Help</H1>\n"+
     "<I>This web app for internal use only. Official web app: <a href=\"http://drugcentral.org\" target=\"_blank\">DrugCentral.org</a>.</I>\n"+
@@ -847,22 +851,23 @@ public class drugcentral_servlet extends HttpServlet
     "<HR>\n"+
     "<H2>Source and related resources</H2>\n"+
     "<UL>\n"+
-    "<LI><A HREF=\"http://www.whocc.no/atc/structure_and_principles/\">ATC reference</A>\n"+
-    "<LI><A HREF=\"http://www.ebi.ac.uk/chembldb/\">ChEMBL</A>\n"+
-    "<LI><A HREF=\"http://dailymed.nlm.nih.gov/dailymed/\">DailyMed (NLM)</A>\n"+
-    "<LI><A HREF=\"http://www.drugbank.ca/\">DrugBank</A>\n"+
-    "<LI><A HREF=\"http://www.iuphar-db.org/\">IUPHAR</A>\n"+
-    "<LI><A HREF=\"http://open.fda.gov/\">OpenFDA</A>\n"+
-    "<LI><A HREF=\"http://pubchem.ncbi.nlm.nih.gov/\">PubChem</A>\n"+
-    "<LI><A HREF=\"http://www.nlm.nih.gov/research/umls/rxnorm/\">RxNorm (NLM)</A>\n"+
+    "<LI><A HREF=\"https://www.whocc.no/atc/structure_and_principles/\">ATC reference</A>\n"+
+    "<LI><A HREF=\"https://www.ebi.ac.uk/chembldb/\">ChEMBL</A>\n"+
+    "<LI><A HREF=\"https://dailymed.nlm.nih.gov/dailymed/\">DailyMed (NLM)</A>\n"+
+    "<LI><A HREF=\"https://www.drugbank.ca/\">DrugBank</A>\n"+
+    "<LI><A HREF=\"https://www.iuphar-db.org/\">IUPHAR</A>\n"+
+    "<LI><A HREF=\"https://open.fda.gov/\">OpenFDA</A>\n"+
+    "<LI><A HREF=\"https://pubchem.ncbi.nlm.nih.gov/\">PubChem</A>\n"+
+    "<LI><A HREF=\"https://www.nlm.nih.gov/research/umls/rxnorm/\">RxNorm (NLM)</A>\n"+
     "</UL>\n"+
     "<HR>\n"+
     "N_MAX (hits): "+N_MAX+"\n"+
     "<HR>\n"+
     "<A HREF=\"https://cdk.github.io/\">CDK</A> used for molecular depiction.  \n"+
-    "<A HREF=\"http://rdkit.org\">RDKit</A> PostgreSql cartridge used for structural searching.\n"+
-    "<A HREF=\"http://peter-ertl.com/jsme/\">JSME</A> moleclar editor used for structure query input.\n"
+    "<A HREF=\"https://rdkit.org\">RDKit</A> PostgreSql cartridge used for structural searching.\n"+
+    "<A HREF=\"https://peter-ertl.com/jsme/\">JSME</A> moleclar editor used for structure query input.\n"
     );
+    return htm;
   }
   /////////////////////////////////////////////////////////////////////////////
   /**	Called once per servlet instantiation; read servlet parameters (from web.xml).
@@ -872,28 +877,28 @@ public class drugcentral_servlet extends HttpServlet
     super.init(conf);
     CONTEXT=this.getServletContext();	// inherited method
     CONTEXTPATH=CONTEXT.getContextPath();
-    APPNAME=conf.getInitParameter("APPNAME");
-    if (APPNAME==null) APPNAME=this.getServletName();
+    try { APPNAME=conf.getInitParameter("APPNAME"); }
+    catch (Exception e) { APPNAME=this.getServletName(); }
     UPLOADDIR=conf.getInitParameter("UPLOADDIR");
     if (UPLOADDIR==null) throw new ServletException("Please supply UPLOADDIR parameter");
-    DBHOST=conf.getInitParameter("DBHOST");
-    if (DBHOST==null) DBHOST="localhost";
-    DBPORT=Integer.parseInt(conf.getInitParameter("DBPORT"));
-    if (DBPORT==null) DBPORT=5432;
-    DBNAME=conf.getInitParameter("DBNAME");
-    if (DBNAME==null) DBNAME="drugcentral";
-    DBSCHEMA=conf.getInitParameter("DBSCHEMA");
-    if (DBSCHEMA==null) DBSCHEMA="public";
-    DBUSR=conf.getInitParameter("DBUSR");
-    if (DBUSR==null) DBUSR="drugman";
-    DBPW=conf.getInitParameter("DBPW");
-    if (DBPW==null) DBPW="dosage";
-    PROXY_PREFIX=((conf.getInitParameter("PROXY_PREFIX")!=null)?conf.getInitParameter("PROXY_PREFIX"):"");
+    try { DBHOST=conf.getInitParameter("DBHOST"); }
+    catch (Exception e) { DBHOST="localhost"; }
+    try { DBPORT=Integer.parseInt(conf.getInitParameter("DBPORT")); }
+    catch (Exception e) { DBPORT=5432; }
+    try { DBNAME=conf.getInitParameter("DBNAME"); }
+    catch (Exception e) { DBNAME="drugcentral"; }
+    try { DBSCHEMA=conf.getInitParameter("DBSCHEMA"); }
+    catch (Exception e) { DBSCHEMA="public"; }
+    try { DBUSR=conf.getInitParameter("DBUSR"); }
+    catch (Exception e) { DBUSR="drugman"; }
+    try { DBPW=conf.getInitParameter("DBPW"); }
+    catch (Exception e) { DBPW="dosage"; }
     try { N_MAX=Integer.parseInt(conf.getInitParameter("N_MAX")); }
     catch (Exception e) { N_MAX=100; }
     try { String s=conf.getInitParameter("DEBUG"); if (s.equalsIgnoreCase("TRUE")) DEBUG=true; }
     catch (Exception e) { DEBUG=false; }
     if (DBCON!=null) CONTEXT.log("Connection ok: "+DBNAME);
+    PROXY_PREFIX=((conf.getInitParameter("PROXY_PREFIX")!=null)?conf.getInitParameter("PROXY_PREFIX"):"");
   }
   /////////////////////////////////////////////////////////////////////////////
   public void doGet(HttpServletRequest request, HttpServletResponse response)
