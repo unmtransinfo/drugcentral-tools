@@ -32,11 +32,21 @@
         </configuration>
       </plugin>
 
+      <!-- jetty:run -->
       <plugin>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-maven-plugin</artifactId>
-        <!-- version>9.4.18-SNAPSHOT</version -->
         <version>9.4.28.v20200408</version>
+        <configuration>
+          <scanIntervalSeconds>10</scanIntervalSeconds>
+          <httpConnector>
+            <port>8081</port>
+          </httpConnector>
+          <webApp>
+            <descriptor>${project.basedir}/src/main/webapp/WEB-INF/web.xml</descriptor>
+            <contextPath>/drugcentral</contextPath>
+          </webApp>      
+        </configuration>
       </plugin>
 
       <plugin>

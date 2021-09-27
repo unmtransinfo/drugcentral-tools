@@ -9,7 +9,7 @@
 
   <servlet>
     <servlet-name>drugcentral</servlet-name>
-    <servlet-class>edu.unm.health.biocomp.drugcentral.dc_servlet</servlet-class>
+    <servlet-class>edu.unm.health.biocomp.drugcentral.drugcentral_servlet</servlet-class>
     <load-on-startup>1</load-on-startup>
     <init-param><param-name>APPNAME</param-name>
       <param-value>DrugCentral</param-value></init-param>
