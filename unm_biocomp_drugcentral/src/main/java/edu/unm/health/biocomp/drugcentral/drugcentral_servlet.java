@@ -25,7 +25,7 @@ import org.openscience.cdk.depict.*; // Depiction, DepictionGenerator
 
 import edu.unm.health.biocomp.util.*;
 import edu.unm.health.biocomp.util.http.*;
-import edu.unm.health.biocomp.util.db.*; //pg_utils
+import edu.unm.health.biocomp.util.db.*; //pg_utils, DBSpec
 import edu.unm.health.biocomp.text.*; //Name,NameList
 
 /**	Client for DC queries: name searches, ID and structure lookups.
@@ -45,12 +45,18 @@ public class drugcentral_servlet extends HttpServlet
   private static String DBSCHEMA=null;	// configured in web.xml
   private static String DBUSR=null;	// configured in web.xml
   private static String DBPW=null;	// configured in web.xml
+  private static String DBHOST_ALT=null;	// configured in web.xml
+  private static Integer DBPORT_ALT=null;	// configured in web.xml
+  private static String DBNAME_ALT=null;	// configured in web.xml
+  private static String DBSCHEMA_ALT=null;	// configured in web.xml
+  private static String DBUSR_ALT=null;	// configured in web.xml
+  private static String DBPW_ALT=null;	// configured in web.xml
   private static int N_MAX=100; // configured in web.xml
   private static Boolean DEBUG=false; // configured in web.xml
   private static ResourceBundle rb=null;
   private static PrintWriter out=null;
-  private static ArrayList<String> outputs=null;
-  private static ArrayList<String> errors=null;
+  private static ArrayList<String> OUTPUTS=null;
+  private static ArrayList<String> ERRORS=null;
   private static HttpParams params=null;
   private static int SERVERPORT=0;
   private static String SERVERNAME=null;
@@ -61,8 +67,10 @@ public class drugcentral_servlet extends HttpServlet
   private static int DEPSZ=120;
   private static String MOL2IMG_SERVLETURL="";
   private static String JSMEURL=null;
-  private DBCon DBCON=null; //non-static, one per object
   private static String PROXY_PREFIX=null;      // configured in web.xml
+  private static ArrayList<DBSpec> DBS=null;
+  private static Integer DBIDX = null;
+  private DBCon DBCON=null; //non-static, one per object
 
   /////////////////////////////////////////////////////////////////////////////
   public void doPost(HttpServletRequest request,HttpServletResponse response)
@@ -99,7 +107,7 @@ public class drugcentral_servlet extends HttpServlet
       response.setContentType("text/html");
       out = response.getWriter();
       out.println(HtmUtils.HeaderHtm(APPNAME, jsincludes, cssincludes, JavaScript(), "", color1, request));
-      out.println(HtmUtils.FooterHtm(errors,true));
+      out.println(HtmUtils.FooterHtm(ERRORS,true));
       return;
     }
     else if (request.getParameter("help")!=null)	// GET method, help=TRUE
@@ -108,7 +116,7 @@ public class drugcentral_servlet extends HttpServlet
       out = response.getWriter();
       out.println(HtmUtils.HeaderHtm(APPNAME, jsincludes, cssincludes, JavaScript(), "", color1, request));
       out.println(HelpHtm());
-      out.println(HtmUtils.FooterHtm(errors,true));
+      out.println(HtmUtils.FooterHtm(ERRORS,true));
     }
     else if (request.getParameter("test")!=null)	// GET method, test=TRUE
     {
@@ -139,13 +147,13 @@ public class drugcentral_servlet extends HttpServlet
         qhtm+=("</DIV></TD>");
         qhtm+=("</TR>");
         qhtm+=("</TABLE>");
-        outputs.add(qhtm);
+        OUTPUTS.add(qhtm);
       }
 
       if (request.getMethod().equalsIgnoreCase("POST") || !dbquery.getText().isEmpty())
       {
-        if (dbquery.getText().isEmpty()) { outputs.add("ERROR: empty query string."); return ; }
-        else if (dbquery.toString().length()<3) { outputs.add("ERROR: query must be 3+ characters."); return; }
+        if (dbquery.getText().isEmpty()) { OUTPUTS.add("ERROR: empty query string."); return ; }
+        else if (dbquery.toString().length()<3) { OUTPUTS.add("ERROR: query must be 3+ characters."); return; }
 
         StringBuilder querylog = new StringBuilder();
         if (dbquery.getType().equalsIgnoreCase("cid")) //Query type: Get compound
@@ -159,115 +167,125 @@ public class drugcentral_servlet extends HttpServlet
               drugcentral_utils.ResultSet2CompoundActivities(rset, cpd);
             }
           }
-          catch (SQLException e) { errors.add("ERROR: "+e.getMessage()); }
+          catch (SQLException e) { ERRORS.add("ERROR: "+e.getMessage()); }
           if (params.isChecked("activityreport"))
-            outputs.add(ResultCompoundActivityHtm(cpd));
+            OUTPUTS.add(ResultCompoundActivityHtm(cpd));
           else
-            outputs.add(ResultCompoundHtm(cpd, response));
+            OUTPUTS.add(ResultCompoundHtm(cpd, response));
         }
         else if (dbquery.getType().equalsIgnoreCase("pid")) //Query type: Get product
         {
           DCProduct prd = null;
           try { prd = drugcentral_utils.GetProduct(DBCON, dbquery, querylog); }
-          catch (SQLException e) { errors.add("ERROR: "+e.getMessage()); }
-          outputs.add(ResultProductHtm(prd, response));
+          catch (SQLException e) { ERRORS.add("ERROR: "+e.getMessage()); }
+          OUTPUTS.add(ResultProductHtm(prd, response));
         }
         else //Query type: Search compounds
         {
           CompoundList cpds = null;
           try { cpds = drugcentral_utils.SearchCompounds(DBCON, dbquery, querylog); }
-          catch (Exception e) { errors.add("ERROR: "+e.toString()); }
-          outputs.add(ResultCompoundsHtm(cpds, response, N_MAX));
+          catch (Exception e) { ERRORS.add("ERROR: "+e.toString()); }
+          OUTPUTS.add(ResultCompoundsHtm(cpds, response, N_MAX));
         }
-        out.println(HtmUtils.OutputHtm(outputs));
+        out.println(HtmUtils.OutputHtm(OUTPUTS));
         if (out_log!=null) {
 	  out_log.printf("%s\t%s\t\"%s\"\n", DATESTR, REMOTEHOST, dbquery.toString());
           out_log.close();
 	}
         if (params.isChecked("verbose"))
           if (querylog.length()>0)
-            errors.add("<PRE>"+querylog.toString()+"</PRE>");
+            ERRORS.add("<PRE>"+querylog.toString()+"</PRE>");
       }
       if (params.isChecked("verbose"))
-        errors.add("Elapsed time: "+time_utils.TimeDeltaStr(t_0, new java.util.Date()));
+        ERRORS.add("Elapsed time: "+time_utils.TimeDeltaStr(t_0, new java.util.Date()));
 
-      out.println(HtmUtils.FooterHtm(errors, true));
+      out.println(HtmUtils.FooterHtm(ERRORS, true));
     }
   }
   /////////////////////////////////////////////////////////////////////////////
   /**	Called once per request.
   */
-  private boolean Initialize(HttpServletRequest request, MultipartRequest mrequest)
-      throws IOException, ServletException
+  private boolean Initialize(HttpServletRequest request, MultipartRequest mrequest) throws IOException, ServletException
   {
     SERVLETNAME = this.getServletName();
-    outputs = new ArrayList<String>();
-    errors = new ArrayList<String>();
+    OUTPUTS = new ArrayList<String>();
+    ERRORS = new ArrayList<String>();
     params = new HttpParams();
 
-    String logo_htm="<TABLE CELLSPACING=5 CELLPADDING=5><TR><TD>";
-    String imghtm=("<IMG BORDER=0 SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/biocomp_logo_only.gif\">");
-    String tiphtm=(APPNAME+" web app from UNM Translational Informatics.");
-    String href=("https://datascience.unm.edu/");
+    String logo_htm = "<TABLE CELLSPACING=5 CELLPADDING=5><TR><TD>";
+    String imghtm = ("<IMG BORDER=0 SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/biocomp_logo_only.gif\">");
+    String tiphtm = (APPNAME+" web app from UNM Translational Informatics.");
+    String href = ("https://datascience.unm.edu/");
     logo_htm+=(HtmUtils.HtmTipper(imghtm, tiphtm, href, 200, "white"));
     logo_htm+="</TD><TD>";
-    imghtm=("<IMG BORDER=\"0\" HEIGHT=\"60\" SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/cdk_logo.png\">");
-    tiphtm=("CDK");
-    href=("https://cdk.github.io/");
+    imghtm = ("<IMG BORDER=\"0\" HEIGHT=\"60\" SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/cdk_logo.png\">");
+    tiphtm = ("CDK");
+    href = ("https://cdk.github.io/");
     logo_htm+=(HtmUtils.HtmTipper(imghtm, tiphtm, href, 200, "white"));
     logo_htm+="</TD><TD>";
-    imghtm=("<IMG BORDER=0 HEIGHT=\"60\" SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/rdkit_logo.png\">");
-    tiphtm=("RDKit");
-    href=("https://rdkit.org/");
+    imghtm = ("<IMG BORDER=0 HEIGHT=\"60\" SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/rdkit_logo.png\">");
+    tiphtm = ("RDKit");
+    href = ("https://rdkit.org/");
     logo_htm+=(HtmUtils.HtmTipper(imghtm, tiphtm, href, 200, "white"));
     logo_htm+="</TD><TD>";
-    imghtm=("<IMG BORDER=0 HEIGHT=\"40\" SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/JSME_logo.png\">");
-    tiphtm=("JSME Molecular Editor");
-    href=("https://peter-ertl.com/jsme/");
+    imghtm = ("<IMG BORDER=0 HEIGHT=\"40\" SRC=\""+PROXY_PREFIX+CONTEXTPATH+"/images/JSME_logo.png\">");
+    tiphtm = ("JSME Molecular Editor");
+    href = ("https://peter-ertl.com/jsme/");
     logo_htm+=(HtmUtils.HtmTipper(imghtm, tiphtm, href, 200, "white"));
     logo_htm+="</TD></TR></TABLE>";
-    errors.add("<CENTER>"+logo_htm+"</CENTER>");
+    ERRORS.add("<CENTER>"+logo_htm+"</CENTER>");
 
     MOL2IMG_SERVLETURL = (PROXY_PREFIX+CONTEXTPATH+"/mol2img");
     JSMEURL = (PROXY_PREFIX+CONTEXTPATH+"/jsme_win.html");
 
-    errors.add("CDK version: "+CDK.getVersion());
+    ERRORS.add("CDK version: "+CDK.getVersion());
 
-    for (Enumeration e=request.getParameterNames(); e.hasMoreElements(); ) //GET
-    {
-      String key=(String)e.nextElement();
-      if (request.getParameter(key)!=null) params.setVal(key, request.getParameter(key));
+    DBS = new ArrayList<DBSpec>();
+    DBSpec db = new DBSpec(DBHOST, DBPORT, DBNAME, DBUSR, DBPW);
+    DBS.add(db);
+    DBSpec db_alt = new DBSpec(DBHOST_ALT, DBPORT_ALT, DBNAME_ALT, DBUSR_ALT, DBPW_ALT);
+    DBS.add(db_alt);
+
+    if (mrequest==null) { //GET
+      for (Enumeration e = request.getParameterNames(); e.hasMoreElements(); )
+      {
+        String key = (String)e.nextElement();
+        if (request.getParameter(key)!=null) params.setVal(key, request.getParameter(key));
+      }
     }
+    else { //POST
+      for (Enumeration e = mrequest.getParameterNames(); e.hasMoreElements(); ) //POST
+      {
+        String key = (String)e.nextElement();
+        if (mrequest.getParameter(key)!=null) params.setVal(key, mrequest.getParameter(key));
+      }
+    }
+
     if (DEBUG) params.setVal("verbose", "TRUE");
 
-    try { DBCON = new DBCon("postgres", DBHOST, DBPORT, DBNAME, DBUSR, DBPW); }
-    catch (Exception e) { errors.add("Connection failed:"+e.toString()); }
+    ERRORS.add("DEBUG: params.getVal(\"dbidx\")=\""+params.getVal("dbidx")+"\"");
+    try { DBIDX = Integer.parseInt(params.getVal("dbidx")); }
+    catch (Exception e) {
+      ERRORS.add(e.toString());
+      DBIDX = 0;
+    }
+
+    try { DBCON = new DBCon("postgres", DBS.get(DBIDX).host, DBS.get(DBIDX).port, DBS.get(DBIDX).name, DBS.get(DBIDX).user, DBS.get(DBIDX).pw); }
+    catch (Exception e) { ERRORS.add("Connection failed:"+e.toString()); }
 
     if (DBCON!=null)
     {
       if (params.isChecked("verbose"))
-        errors.add("connection ok: "+DBNAME+"@"+DBHOST);
-      errors.add(pg_utils.ServerStatusTxt(DBCON.getConnection()));
-      errors.add("RDKit (PgSql cartridge) version: "+drugcentral_utils.RDKitVersion(DBCON));
+        ERRORS.add("connection ok: "+DBS.get(DBIDX).toString());
+      ERRORS.add(pg_utils.ServerStatusTxt(DBCON.getConnection()));
+      ERRORS.add("RDKit-cartridge version: "+drugcentral_utils.RDKitVersion(DBCON));
     }
 
-    try {
-      errors.add("<BLOCKQUOTE>"+this.DbSummaryHtm()+"</BLOCKQUOTE>");
-    } catch (Exception e) { errors.add(e.getMessage()); }
+    try { ERRORS.add("<BLOCKQUOTE>"+this.DbSummaryHtm()+"</BLOCKQUOTE>"); }
+    catch (Exception e) { ERRORS.add(e.getMessage()); }
 
     if (params.isChecked("verbose"))
-    {
-      errors.add("app server: "+CONTEXT.getServerInfo()+" [API:"+CONTEXT.getMajorVersion()+"."+CONTEXT.getMinorVersion()+"]");
-    }
-
-    if (mrequest==null) return true; //i.e. GET method
-
-    for (Enumeration e=mrequest.getParameterNames(); e.hasMoreElements(); ) //POST
-    {
-      String key=(String)e.nextElement();
-      if (mrequest.getParameter(key)!=null) params.setVal(key, mrequest.getParameter(key));
-    }
-    if (DEBUG) params.setVal("verbose", "TRUE");
+      ERRORS.add("app server: "+CONTEXT.getServerInfo()+" [API:"+CONTEXT.getMajorVersion()+"."+CONTEXT.getMinorVersion()+"]");
 
     return true;
   }
@@ -288,40 +306,46 @@ public class drugcentral_servlet extends HttpServlet
   /////////////////////////////////////////////////////////////////////////////
   private static String FormHtm(MultipartRequest mrequest, HttpServletResponse response) throws IOException
   {
-    String htm = (
-    ("<FORM NAME=\"mainform\" METHOD=POST ACTION=\""+response.encodeURL(SERVLETNAME)+"\"")
-    +(" ENCTYPE=\"multipart/form-data\">\n")
-    +("<TABLE WIDTH=\"100%\"><TR><TD width=\"25%\"><H1>"+APPNAME+"</H1></TD><TD><DIV STYLE=\"margin-bottom:0\"><B>- approved-drug knowledge-base</B></DIV></TD><TD></TD>\n")
-    +("<TD ALIGN=\"right\">\n")
-    +("<BUTTON TYPE=BUTTON onClick=\"go_popup('"+response.encodeURL(SERVLETNAME)+"?help=TRUE&verbose=TRUE','helpwin','width=600,height=400,scrollbars=1,resizable=1')\"><B>Help</B></BUTTON>\n")
-    +("<BUTTON TYPE=BUTTON onClick=\"close_childwins(window); window.location.replace('"+response.encodeURL(SERVLETNAME)+"')\"><B>Reset</B></BUTTON>\n")
-    +("</TD></TR></TABLE>\n")
-    +("<HR>\n")
-    +("<CENTER>\n")
-    +("<TABLE WIDTH=\"70%\" CELLPADDING=\"10\" CELLSPACING=\"10\">\n")
-    +("<TR BGCOLOR=\"#CCCCFF\"><TD ALIGN=\"CENTER\" VALIGN=\"MIDDLE\">\n")
-    +("<P>\n")
-    +("<INPUT STYLE=\"padding:5px; font-size:14px;\" TYPE=\"text\" NAME=\"query\" SIZE=\"64\" VALUE=\""+params.getVal("query")+"\">\n")
-    +("<BR>\n")
-    +("<i>Enter query: name substring...or draw structure query:</i>\n")
-    +("<BUTTON TYPE=BUTTON onClick=\"StartJSME()\"><DIV STYLE=\"font-size:9px\">JSME</DIV></BUTTON><BR>\n")
-    +("<BUTTON TYPE=\"button\" onClick=\"go_dc(this.form)\"><DIV STYLE=\"font-size:14px; font-weight:bold\">Go "+APPNAME+"</DIV></BUTTON>\n")
-    +("<P>\n")
-    +("<SMALL>Examples (name): "));
+    String db_menu = "<SELECT NAME=\"dbidx\">\n";
+    for (int i=0; i<DBS.size(); ++i)
+      db_menu+=("<OPTION VALUE=\""+i+"\""+((i==DBIDX)?" SELECTED":"")+">("+(i+1)+") "+DBS.get(i).host+":"+DBS.get(i).name+"\n");
+    db_menu+="</SELECT>\n";
 
-    //Square brackets now invalid for URLs, per RFC 7230 and RFC 3986.
-    //Encode as %5B and %5D.
-    for (String drugname: new String[]{"aspirin", "hydrocortisone", "ketorolac", "prozac", "ranitidine", "rosuvastatin", "tamoxifen", "verapamil"})
-      htm+=("&nbsp;<A HREF=\""+response.encodeURL(SERVLETNAME)+"?query="+drugname+"%5Bfulltxt%5D\">"+drugname+"</A>\n");
+    String htm = (
+      ("<FORM NAME=\"mainform\" METHOD=POST ACTION=\""+response.encodeURL(SERVLETNAME)+"\" ENCTYPE=\"multipart/form-data\">\n")
+      +("<TABLE WIDTH=\"100%\"><TR><TD width=\"25%\"><H1>"+APPNAME+"</H1></TD><TD><DIV STYLE=\"margin-bottom:0\"><B>- approved-drug knowledge-base</B></DIV></TD><TD></TD>\n")
+      +("<TD ALIGN=\"right\">\n")
+      +(db_menu)
+      +("</TD><TD ALIGN=\"right\">\n")
+      +("<BUTTON TYPE=BUTTON onClick=\"go_popup('"+response.encodeURL(SERVLETNAME)+"?help=TRUE&verbose=TRUE','helpwin','width=600,height=400,scrollbars=1,resizable=1')\"><B>Help</B></BUTTON>\n")
+      +("<BUTTON TYPE=BUTTON onClick=\"close_childwins(window); window.location.replace('"+response.encodeURL(SERVLETNAME)+"')\"><B>Reset</B></BUTTON>\n")
+      +("</TD></TR></TABLE>\n")
+      +("<HR>\n")
+      +("<CENTER>\n")
+      +("<TABLE WIDTH=\"70%\" CELLPADDING=\"10\" CELLSPACING=\"10\">\n")
+      +("<TR BGCOLOR=\"#CCCCFF\"><TD ALIGN=\"CENTER\" VALIGN=\"MIDDLE\">\n")
+      +("<P>\n")
+      +("<INPUT STYLE=\"padding:5px; font-size:14px;\" TYPE=\"text\" NAME=\"query\" SIZE=\"64\" VALUE=\""+params.getVal("query")+"\">\n")
+      +("<BR>\n")
+      +("<i>Enter query: name substring...or draw structure query:</i>\n")
+      +("<BUTTON TYPE=BUTTON onClick=\"StartJSME()\"><DIV STYLE=\"font-size:9px\">JSME</DIV></BUTTON><BR>\n")
+      +("<BUTTON TYPE=\"button\" onClick=\"go_drugcentral(this.form)\"><DIV STYLE=\"font-size:14px; font-weight:bold\">Go "+APPNAME+"</DIV></BUTTON>\n")
+      +("<P>\n")
+      +("<SMALL>Examples (name): "));
+
+      //Square brackets invalid for URLs, per RFC 7230 and RFC 3986; encode as %5B and %5D.
+    for (String drugname: new String[]{"aspirin", "hydrocortisone", "ketorolac", "prozac", "ranitidine", "rosuvastatin", "tamoxifen", "verapamil"}) {
+      //htm+=("&nbsp;<A HREF=\""+response.encodeURL(SERVLETNAME)+"?query="+drugname+"%5Bfulltxt%5D&dbidx="+DBIDX+"\">"+drugname+"</A>\n");
+      htm+=("&nbsp;<A HREF=\"javascript:void(0)\" onClick=\"go_example('"+drugname+"[fulltxt]')\">"+drugname+"</A>\n");
+    }
     htm+=(("<BR>\n")
       +("<SMALL>Examples (substructure): ")
-      +("&nbsp;<A HREF=\""+response.encodeURL(SERVLETNAME)+"?query=C12CCCC1CCC1C2CCC2=CCCCC12%5Bsubstruct%5D\">steroids</A>\n")
-      +("&nbsp;<A HREF=\""+response.encodeURL(SERVLETNAME)+"?query=N1c2ccccc2C(=NCC1)c1ccccc1%5Bsubstruct%5D\">benzodiazepines</A>\n"));
-    htm+=(
-     ("<BR>\n<i>For advanced query syntax, see help.</i>\n")
-    +("</SMALL></TD></TR></TABLE>\n")
-    +("</CENTER>\n")
-    +("</FORM>\n"));
+      +("&nbsp;<A HREF=\"javascript:void(0)\" onClick=\"go_example('C12CCCC1CCC1C2CCC2=CCCCC12[substruct]')\">steroids</A>\n")
+      +("&nbsp;<A HREF=\"javascript:void(0)\" onClick=\"go_example('N1c2ccccc2C(=NCC1)c1ccccc1[substruct]')\">benzodiazepines</A>\n"));
+    htm+=(("<BR>\n<i>For advanced query syntax, see help.</i>\n")
+      +("</SMALL></TD></TR></TABLE>\n")
+      +("</CENTER>\n")
+      +("</FORM>\n"));
     return htm;
   }
 
@@ -329,18 +353,18 @@ public class drugcentral_servlet extends HttpServlet
   private static String ResultCompoundHtm(DCCompound cpd, HttpServletResponse response)
   {
     if (cpd==null) return ("<H2>Compound not found.</H2>");
-    String htm=("<H2>Compound ["+cpd.getDCID()+"]</H2>");
-    String thtm=("<TABLE WIDTH=\"100%\" CELLSPACING=2 CELLPADDING=2>\n");
+    String htm = ("<H2>Compound ["+cpd.getDCID()+"]</H2>");
+    String thtm = ("<TABLE WIDTH=\"100%\" CELLSPACING=2 CELLPADDING=2>\n");
     String imghtm;
-    String depictopts="kekule=TRUE";
+    String depictopts = "kekule=TRUE";
     if (cpd.isLarge())
-      imghtm=("<I>(LARGE MOLECULE)</I>\n");
+      imghtm = ("<I>(LARGE MOLECULE)</I>\n");
     else if (cpd.getAtomCount()==0)
-      imghtm=("<I>(MOLECULE UNAVAILABLE)</I>\n");
+      imghtm = ("<I>(MOLECULE UNAVAILABLE)</I>\n");
     else if (cpd.getMolfile()!=null)
-      imghtm=HtmUtils.Molfile2ImgHtm(cpd.getMolfile(), depictopts, 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_mdl2img");
+      imghtm = HtmUtils.Molfile2ImgHtm(cpd.getMolfile(), depictopts, 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_mdl2img");
     else
-      imghtm=((cpd.getSmiles()!=null)?HtmUtils.Smi2ImgHtm(cpd.getSmiles(), depictopts, 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_smi2img"):"");
+      imghtm = ((cpd.getSmiles()!=null)?HtmUtils.Smi2ImgHtm(cpd.getSmiles(), depictopts, 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_smi2img"):"");
 
     thtm+=(("<TR><TD ALIGN=\"right\"></TD><TD BGCOLOR=\"white\" ALIGN=\"center\">"+imghtm+"</TD></TR>\n")
       +("<TR><TD ALIGN=\"right\">MF</TD><TD BGCOLOR=\"white\">"+cpd.getMolformula()+"</TD></TR>\n")
@@ -349,7 +373,7 @@ public class drugcentral_servlet extends HttpServlet
       thtm+=("<TR><TD ALIGN=\"right\">Smiles</TD><TD BGCOLOR=\"white\">"+cpd.getSmiles()+"</TD></TR>\n");
 
     //Names:
-    NameList names =  cpd.getNames();
+    NameList names = cpd.getNames();
     thtm+="<TR><TD ALIGN=\"right\" VALIGN=\"top\">Names ("+names.size()+")</TD><TD BGCOLOR=\"white\"><UL>\n";
     for (Name name: names)
       thtm+=("<LI>"+name.getValue()+"\n");
@@ -363,28 +387,28 @@ public class drugcentral_servlet extends HttpServlet
     String thtm2="<TABLE WIDTH=\"100%\" CELLSPACING=\"1\" CELLPADDING=\"1\">\n";
     for (String idtype: cpd.getExtIDTypes())
     {
-      String val=cpd.getExtID(idtype);
+      String val = cpd.getExtID(idtype);
       String url=null;
       if (idtype.equalsIgnoreCase("PUBCHEM_CID"))
-        url=("http://pubchem.ncbi.nlm.nih.gov/compound/"+val);
+        url = ("http://pubchem.ncbi.nlm.nih.gov/compound/"+val);
       else if (idtype.equalsIgnoreCase("CHEBI"))
-        url=("https://www.ebi.ac.uk/chebi/searchId.do?chebiId="+val);
+        url = ("https://www.ebi.ac.uk/chebi/searchId.do?chebiId="+val);
       else if (idtype.equalsIgnoreCase("ChEMBL_ID"))
-        url=("https://www.ebi.ac.uk/chembl/compound/inspect/"+val);
+        url = ("https://www.ebi.ac.uk/chembl/compound/inspect/"+val);
       else if (idtype.equalsIgnoreCase("KEGG") || idtype.equalsIgnoreCase("KEGG_DRUG"))
-        url=("http://www.kegg.jp/entry/"+val);
+        url = ("http://www.kegg.jp/entry/"+val);
       else if (idtype.equalsIgnoreCase("MESH_DESCRIPTOR_UI"))
-        url=("http://id.nlm.nih.gov/mesh/?term="+val);
+        url = ("http://id.nlm.nih.gov/mesh/?term="+val);
       else if (idtype.equalsIgnoreCase("UNII"))
-        url=("http://chem.sis.nlm.nih.gov/chemidplus/unii/"+val);
+        url = ("http://chem.sis.nlm.nih.gov/chemidplus/unii/"+val);
       else if (idtype.equalsIgnoreCase("IUPHAR_LIGAND_ID"))
-        url=("http://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId="+val);
+        url = ("http://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId="+val);
       else if (idtype.equalsIgnoreCase("DRUGBANK_ID"))
-	url=("http://www.drugbank.ca/drugs/"+val);
+	url = ("http://www.drugbank.ca/drugs/"+val);
       else if (idtype.equalsIgnoreCase("INN_ID"))
-	url=("https://mednet-communities.net/inn/db/ViewINN.aspx?i="+val);
+	url = ("https://mednet-communities.net/inn/db/ViewINN.aspx?i="+val);
       else if (idtype.equalsIgnoreCase("PDB_CHEM_ID"))
-	url=("http://www.rcsb.org/pdb/ligand/ligandsummary.do?hetId="+val);
+	url = ("http://www.rcsb.org/pdb/ligand/ligandsummary.do?hetId="+val);
       //else if (idtype.equalsIgnoreCase("MMSL_CODE"))
       //else if (idtype.equalsIgnoreCase("RxCUI"))
       //else if (idtype.equalsIgnoreCase("UMLSCUI"))
@@ -461,8 +485,8 @@ public class drugcentral_servlet extends HttpServlet
   private static String ResultCompoundActivityHtm(DCCompound cpd)
   {
     if (cpd==null) return ("<H2>ERROR: cpd==null</H2>");
-    String htm=("<H2>Compound Activity ["+cpd.getDCID()+"]</H2>");
-    String thtm=("<TABLE WIDTH=\"100%\" CELLSPACING=2 CELLPADDING=2>\n");
+    String htm = ("<H2>Compound Activity ["+cpd.getDCID()+"]</H2>");
+    String thtm = ("<TABLE WIDTH=\"100%\" CELLSPACING=2 CELLPADDING=2>\n");
     thtm+=("<TR><TH></TH><TH>Target</TH><TH>Result</TH><TH>Value</TH><TH>MOA</TH>\n");
     thtm+=("<TH>Source</TH><TH>Comment</TH></TR>\n");
 
@@ -517,10 +541,10 @@ public class drugcentral_servlet extends HttpServlet
   private static String ResultProductHtm(DCProduct product, HttpServletResponse response)
   {
     if (product==null) return ("<H2>Product not found.</H2>");
-    String htm=("<H2>Product ["+product.getID()+"]</H2>");
+    String htm = ("<H2>Product ["+product.getID()+"]</H2>");
     String imghtm;
-    String depictopts="kekule=TRUE";
-    String thtm=("<TABLE WIDTH=\"100%\" CELLSPACING=2 CELLPADDING=2>\n");
+    String depictopts = "kekule=TRUE";
+    String thtm = ("<TABLE WIDTH=\"100%\" CELLSPACING=2 CELLPADDING=2>\n");
     if (!product.hasLargeCompound())
     {
       imghtm = ((product.getMixtureSmiles()!=null)?HtmUtils.Smi2ImgHtm(product.getMixtureSmiles(), depictopts, 180, 320, MOL2IMG_SERVLETURL, true, 4, "go_zoom_smi2img"):"");
@@ -538,15 +562,15 @@ public class drugcentral_servlet extends HttpServlet
     {
       ++i;
       DCCompound cpd = ingr.getCompound();
-      String thtm2="<TABLE WIDTH=\"100%\" CELLSPACING=2 CELLPADDING=2>\n"; //ingredient table
+      String thtm2 = "<TABLE WIDTH=\"100%\" CELLSPACING=2 CELLPADDING=2>\n"; //ingredient table
       if (cpd.isLarge())
-        imghtm=("<I>(LARGE MOLECULE)</I>");
+        imghtm = ("<I>(LARGE MOLECULE)</I>");
       else if (cpd.getAtomCount()==0)
-        imghtm=("<I>(MOLECULE UNAVAILABLE)</I>\n");
+        imghtm = ("<I>(MOLECULE UNAVAILABLE)</I>\n");
       else if (cpd.getMolfile()!=null)
-        imghtm=HtmUtils.Molfile2ImgHtm(cpd.getMolfile(), depictopts, 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_mdl2img");
+        imghtm = HtmUtils.Molfile2ImgHtm(cpd.getMolfile(), depictopts, 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_mdl2img");
       else
-        imghtm=((cpd.getSmiles()!=null)?HtmUtils.Smi2ImgHtm(cpd.getSmiles(), depictopts, 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_smi2img"):"");
+        imghtm = ((cpd.getSmiles()!=null)?HtmUtils.Smi2ImgHtm(cpd.getSmiles(), depictopts, 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_smi2img"):"");
       thtm2+=(("<TR><TD COLSPAN=\"2\" ALIGN=\"center\" BGCOLOR=\"white\">"+imghtm+"</TD></TR>\n")
         +("<TR><TD ALIGN=\"right\" VALIGN=\"top\">MF</TD><TD BGCOLOR=\"white\">"+cpd.getMolformula()+"</TD></TR>\n")
         +("<TR><TD ALIGN=\"right\" VALIGN=\"top\">MWT</TD><TD BGCOLOR=\"white\">"+String.format("%.1f", cpd.getMwt())+"</TD></TR>\n")
@@ -629,13 +653,13 @@ public class drugcentral_servlet extends HttpServlet
       //Depiction:
       String imghtm;
       if (cpd.isLarge())
-        imghtm=("<I>(LARGE MOLECULE)</I><BR>MF = "+cpd.getMolformula()+"<BR>MWT = "+String.format("%.1f", cpd.getMwt())+"\n");
+        imghtm = ("<I>(LARGE MOLECULE)</I><BR>MF = "+cpd.getMolformula()+"<BR>MWT = "+String.format("%.1f", cpd.getMwt())+"\n");
       else if (cpd.getAtomCount()==0)
-        imghtm=("<I>(MOLECULE UNAVAILABLE)</I>\n");
+        imghtm = ("<I>(MOLECULE UNAVAILABLE)</I>\n");
       else if (cpd.getMolfile()!=null)
-        imghtm=HtmUtils.Molfile2ImgHtm(cpd.getMolfile(), depictopts, 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_mdl2img");
+        imghtm = HtmUtils.Molfile2ImgHtm(cpd.getMolfile(), depictopts, 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_mdl2img");
       else
-        imghtm=((cpd.getSmiles()!=null)?HtmUtils.Smi2ImgHtm(cpd.getSmiles(), depictopts, 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_smi2img"):"");
+        imghtm = ((cpd.getSmiles()!=null)?HtmUtils.Smi2ImgHtm(cpd.getSmiles(), depictopts, 120, 150, MOL2IMG_SERVLETURL, true, 4, "go_zoom_smi2img"):"");
       rhtm+=("<TD BGCOLOR=\"white\" ALIGN=\"center\" VALIGN=\"top\">"+imghtm+"<BR>\n"+cpd_id+"</TD>");
 
       //Names:
@@ -695,10 +719,16 @@ public class drugcentral_servlet extends HttpServlet
   {
     String js = (
 "var childwins = new Array();\n"+
-"function go_dc(form)\n"+
+"function go_drugcentral(form)\n"+
 "{\n"+
 "  if (checkform(form))\n"+
 "    form.submit();\n"+
+"}\n"+
+"function go_example(query)\n"+
+"{\n"+
+"  var form = document.mainform;\n"+
+"  form.query.value = query;\n"+
+"  go_drugcentral(form);\n"+
 "}\n"+
 "function checkform(form)\n"+
 "{\n"+
@@ -737,7 +767,7 @@ public class drugcentral_servlet extends HttpServlet
 "  if ((typeof win.childwins)=='undefined') return;\n"+
 "  while (win.childwins.length>0)\n"+
 "  {\n"+
-"    var cwin=win.childwins.shift();\n"+
+"    var cwin = win.childwins.shift();\n"+
 "    if ((typeof cwin.childwins)!='undefined' && cwin.childwins.length>0) close_childwins(cwin); //recurse\n"+
 "    cwin.focus();\n"+
 "    cwin.close();\n"+
@@ -757,8 +787,8 @@ public class drugcentral_servlet extends HttpServlet
 "    alert('ERROR: no molecule submitted');\n"+
 "    return;\n"+
 "  }\n"+
-"  var form=document.mainform;\n"+
-"  form.query.value=smiles+'[substruct]';\n"+
+"  var form = document.mainform;\n"+
+"  form.query.value = smiles+'[substruct]';\n"+
 "}\n"
     );
     return js;
@@ -875,30 +905,32 @@ public class drugcentral_servlet extends HttpServlet
   public void init(ServletConfig conf) throws ServletException
   {
     super.init(conf);
-    CONTEXT=this.getServletContext();	// inherited method
-    CONTEXTPATH=CONTEXT.getContextPath();
-    try { APPNAME=conf.getInitParameter("APPNAME"); }
-    catch (Exception e) { APPNAME=this.getServletName(); }
-    UPLOADDIR=conf.getInitParameter("UPLOADDIR");
+    CONTEXT = this.getServletContext();	// inherited method
+    CONTEXTPATH = CONTEXT.getContextPath();
+    try { APPNAME = conf.getInitParameter("APPNAME"); }
+    catch (Exception e) { APPNAME = this.getServletName(); }
+    UPLOADDIR = conf.getInitParameter("UPLOADDIR");
     if (UPLOADDIR==null) throw new ServletException("Please supply UPLOADDIR parameter");
-    try { DBHOST=conf.getInitParameter("DBHOST"); }
-    catch (Exception e) { DBHOST="localhost"; }
-    try { DBPORT=Integer.parseInt(conf.getInitParameter("DBPORT")); }
-    catch (Exception e) { DBPORT=5432; }
-    try { DBNAME=conf.getInitParameter("DBNAME"); }
-    catch (Exception e) { DBNAME="drugcentral"; }
-    try { DBSCHEMA=conf.getInitParameter("DBSCHEMA"); }
-    catch (Exception e) { DBSCHEMA="public"; }
-    try { DBUSR=conf.getInitParameter("DBUSR"); }
-    catch (Exception e) { DBUSR="drugman"; }
-    try { DBPW=conf.getInitParameter("DBPW"); }
-    catch (Exception e) { DBPW="dosage"; }
-    try { N_MAX=Integer.parseInt(conf.getInitParameter("N_MAX")); }
+
+    try { DBHOST = conf.getInitParameter("DBHOST"); } catch (Exception e) { DBHOST = "unmtid-dbs.net"; }
+    try { DBPORT = Integer.parseInt(conf.getInitParameter("DBPORT")); } catch (Exception e) { DBPORT = 5433; }
+    try { DBNAME = conf.getInitParameter("DBNAME"); } catch (Exception e) { DBNAME = "drugcentral"; }
+    try { DBSCHEMA = conf.getInitParameter("DBSCHEMA"); } catch (Exception e) { DBSCHEMA = "public"; }
+    try { DBUSR = conf.getInitParameter("DBUSR"); } catch (Exception e) { DBUSR = "drugman"; }
+    try { DBPW = conf.getInitParameter("DBPW"); } catch (Exception e) { DBPW = "dosage"; }
+
+    try { DBHOST_ALT = conf.getInitParameter("DBHOST_ALT"); } catch (Exception e) { DBHOST_ALT = "localhost"; }
+    try { DBPORT_ALT = Integer.parseInt(conf.getInitParameter("DBPORT_ALT")); } catch (Exception e) { DBPORT_ALT = 5432; }
+    try { DBNAME_ALT = conf.getInitParameter("DBNAME_ALT"); } catch (Exception e) { DBNAME_ALT = "drugcentral"; }
+    try { DBSCHEMA_ALT = conf.getInitParameter("DBSCHEMA_ALT"); } catch (Exception e) { DBSCHEMA_ALT = "public"; }
+    try { DBUSR_ALT = conf.getInitParameter("DBUSR_ALT"); } catch (Exception e) { DBUSR_ALT = "drugman"; }
+    try { DBPW_ALT = conf.getInitParameter("DBPW_ALT"); } catch (Exception e) { DBPW_ALT = "dosage"; }
+
+    try { N_MAX = Integer.parseInt(conf.getInitParameter("N_MAX")); }
     catch (Exception e) { N_MAX=100; }
-    try { String s=conf.getInitParameter("DEBUG"); if (s.equalsIgnoreCase("TRUE")) DEBUG=true; }
+    try { String s = conf.getInitParameter("DEBUG"); if (s.equalsIgnoreCase("TRUE")) DEBUG=true; }
     catch (Exception e) { DEBUG=false; }
-    if (DBCON!=null) CONTEXT.log("Connection ok: "+DBNAME);
-    PROXY_PREFIX=((conf.getInitParameter("PROXY_PREFIX")!=null)?conf.getInitParameter("PROXY_PREFIX"):"");
+    PROXY_PREFIX = ((conf.getInitParameter("PROXY_PREFIX")!=null)?conf.getInitParameter("PROXY_PREFIX"):"");
   }
   /////////////////////////////////////////////////////////////////////////////
   public void doGet(HttpServletRequest request, HttpServletResponse response)

@@ -4,8 +4,8 @@
   xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd"
   version="2.4">
 
-  <display-name>DrugCentral Web App</display-name>
-  <description>DrugCentral Web App</description>
+  <display-name>DrugCentral (DEV)</display-name>
+  <description>DrugCentral (Development Client App)</description>
 
   <servlet>
     <servlet-name>drugcentral</servlet-name>
@@ -13,11 +13,12 @@
     <load-on-startup>1</load-on-startup>
     <init-param><param-name>APPNAME</param-name>
       <param-value>DrugCentral</param-value></init-param>
-    <init-param><param-name>DBHOST</param-name><!-- PostgreSql -->
+
+    <init-param><param-name>DBHOST</param-name>
       <param-value>unmtid-dbs.net</param-value></init-param>
-    <init-param><param-name>DBNAME</param-name><!-- PostgreSql -->
+    <init-param><param-name>DBNAME</param-name>
       <param-value>drugcentral</param-value></init-param>
-    <init-param><param-name>DBSCHEMA</param-name><!-- PostgreSql -->
+    <init-param><param-name>DBSCHEMA</param-name>
       <param-value>public</param-value></init-param>
     <init-param><param-name>DBPORT</param-name>
       <param-value>5433</param-value></init-param>
@@ -25,6 +26,20 @@
       <param-value>drugman</param-value></init-param>
     <init-param><param-name>DBPW</param-name>
       <param-value>dosage</param-value></init-param>
+
+    <init-param><param-name>DBHOST_ALT</param-name>
+      <param-value>localhost</param-value></init-param>
+    <init-param><param-name>DBNAME_ALT</param-name>
+      <param-value>drugcentral</param-value></init-param>
+    <init-param><param-name>DBSCHEMA_ALT</param-name>
+      <param-value>public</param-value></init-param>
+    <init-param><param-name>DBPORT_ALT</param-name>
+      <param-value>5432</param-value></init-param>
+    <init-param><param-name>DBUSR_ALT</param-name>
+      <param-value>drugman</param-value></init-param>
+    <init-param><param-name>DBPW_ALT</param-name>
+      <param-value>dosage</param-value></init-param>
+
     <init-param><param-name>N_MAX</param-name>
       <param-value>100</param-value></init-param>
     <init-param><param-name>N_MAX_LINES</param-name>
