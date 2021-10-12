@@ -15,5 +15,5 @@ DOCKER_ORGANIZATION="unmtransinfo"
 #
 docker pull ${DOCKER_ORGANIZATION}/${INAME}:${TAG}
 #
-docker images ls
+docker image ls
 #
