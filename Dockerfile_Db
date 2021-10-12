@@ -24,8 +24,8 @@ RUN chown postgres /etc/postgresql/12/main/postgresql.conf
 RUN echo "=== Done installing PostgreSQL."
 #
 RUN mkdir -p /home/data/DrugCentral
-COPY data/drugcentral_2018.pgdump /home/data/DrugCentral
 COPY data/drugcentral_2020.pgdump /home/data/DrugCentral
+COPY data/drugcentral_2021.pgdump /home/data/DrugCentral
 RUN echo "=== Done copying db data."
 #
 # Note that user postgres must start db differently than user root.
@@ -37,17 +37,17 @@ ENV dbpw=dosage
 RUN /etc/init.d/postgresql start && \
 	psql -c "CREATE ROLE ${dbusr} WITH LOGIN PASSWORD '${dbpw}'" && \
 	createdb -O postgres ${dbname} && \
-	pg_restore -v --no-owner --schema public -d ${dbname} /home/data/DrugCentral/${dbname}_2020.pgdump && \
+	pg_restore -v --no-owner --schema public -d ${dbname} /home/data/DrugCentral/${dbname}_2021.pgdump && \
 	psql -d ${dbname} -c "GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${dbusr}" && \
 	psql -d ${dbname} -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO ${dbusr}" && \
 	psql -d ${dbname} -c "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO ${dbusr}" && \
 	echo "=== Done loading ${dbname}." && \
-	createdb -O postgres ${dbname}_2018 && \
-	pg_restore -v --no-owner --schema public -d ${dbname}_2018 /home/data/DrugCentral/${dbname}_2018.pgdump && \
-	psql -d ${dbname}_2018 -c "GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${dbusr}" && \
-	psql -d ${dbname}_2018 -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO ${dbusr}" && \
-	psql -d ${dbname}_2018 -c "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO ${dbusr}" && \
-	echo "=== Done loading ${dbname}_2018." && \
+	createdb -O postgres ${dbname}_2020 && \
+	pg_restore -v --no-owner --schema public -d ${dbname}_2020 /home/data/DrugCentral/${dbname}_2020.pgdump && \
+	psql -d ${dbname}_2020 -c "GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${dbusr}" && \
+	psql -d ${dbname}_2020 -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO ${dbusr}" && \
+	psql -d ${dbname}_2020 -c "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO ${dbusr}" && \
+	echo "=== Done loading ${dbname}_2020." && \
 	psql -l
 USER root
 RUN service postgresql stop

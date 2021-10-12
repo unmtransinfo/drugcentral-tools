@@ -21,9 +21,13 @@ if [ ! -e "${cwd}/data" ]; then
 	mkdir ${cwd}/data/
 fi
 #
-sudo -u postgres pg_dump --no-privileges -Fc -d drugcentral_20200918 >/home/data/DrugCentral/drugcentral_2020.pgdump 
-cp /home/data/DrugCentral/drugcentral_2018.pgdump ${cwd}/data/
+#sudo -u postgres pg_dump --no-privileges -Fc -d drugcentral_20200918 >/home/data/DrugCentral/drugcentral_2020.pgdump 
+if [ ! -e /home/data/DrugCentral/drugcentral_20211005.pgdump  ]; then
+	sudo -u postgres pg_dump --no-privileges -Fc -d drugcentral_20211005 >/home/data/DrugCentral/drugcentral_20211005.pgdump 
+fi
+#cp /home/data/DrugCentral/drugcentral_2018.pgdump ${cwd}/data/
 cp /home/data/DrugCentral/drugcentral_2020.pgdump ${cwd}/data/
+cp /home/data/DrugCentral/drugcentral_20211005.pgdump ${cwd}/data/drugcentral_2021.pgdump
 #
 T0=$(date +%s)
 #
@@ -34,8 +38,9 @@ docker build -f ${dockerfile} -t ${INAME}:${TAG} .
 #
 printf "Elapsed time: %ds\n" "$[$(date +%s) - ${T0}]"
 #
-rm -f ${cwd}/data/drugcentral_2018.pgdump
+#rm -f ${cwd}/data/drugcentral_2018.pgdump
 rm -f ${cwd}/data/drugcentral_2020.pgdump
+rm -f ${cwd}/data/drugcentral_2021.pgdump
 #
 docker images
 #
