@@ -31,11 +31,11 @@ mvn --projects unm_biocomp_drugcentral exec:java -Dexec.mainClass="edu.unm.healt
 ## Docker and DockerHub
 
 * [DockerHub:drugcentral\_db](https://hub.docker.com/repository/docker/unmtransinfo/drugcentral_db)
-* See: `Go_DockerBuild.sh`, `Go_DockerPush.sh`, `Go_DockerRun.sh`
+* See: `Go_dc_DockerBuild.sh`, `Go_dc_DockerPush.sh`, `Go_dc_DockerRun.sh`
 
 ## Deploying to public AWS instance
 
-* See: `Go_Ubuntu_DockerInstall.sh`, `Go_DockerHubPull.sh`, `Go_DockerRun.sh`
+* See: `Go_Ubuntu_DockerInstall.sh`, `Go_dc_DockerHubPull.sh`, `Go_dc_DockerRun.sh`
 
 ## Deploying `DRUGCENTRAL_WAR`
 
