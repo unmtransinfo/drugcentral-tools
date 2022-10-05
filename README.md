@@ -25,7 +25,7 @@ mvn clean install
 Command-line app:
 
 ```
-mvn --projects unm_biocomp_drugcentral exec:java -Dexec.mainClass="edu.unm.health.biocomp.drugcentral.drugcentral_app" -Dexec.args="-dbhost localhost -dbport 5432 -dbname drugcentral -dbusr drugman -dbpw dosage"
+java -classpath unm_biocomp_drugcentral-0.0.1-SNAPSHOT-jar-with-dependencies.jar edu.unm.health.biocomp.drugcentral.drugcentral_app -dbhost localhost -dbport 5432 -dbname drugcentral -dbusr drugman -dbpw dosage
 ```
 
 ## Docker and DockerHub
@@ -59,3 +59,25 @@ mvn --projects drugcentral_war tomcat7:redeploy
 mvn --projects drugcentral_war jetty:run
 ```
 
+## Configuring RDKit Cartridge
+
+Configuring RDKit Cartridge provides for chemical structure searching and other
+cheminformatics functionality. The database as available via PostgreSql dump is
+not configured with the RDKit cartridge and molecule object column, for greater
+compatibility across operating systems and PostgreSql versions.
+For Ubuntu 20.04LTS or 22.04LTS, and PostgreSql 14, the PostgreSql Cartridge can
+be installed with this command:
+
+```
+apt install postgresql-14-rdkit
+```
+
+To configure these features, connect to the database,as database owner, and 
+use the following SQL:
+
+```
+CREATE EXTENSION rdkit;
+ALTER TABLE structures ADD m MOL;
+UPDATE structures SET m = mol_from_smiles(smiles::cstring) WHERE smiles IS NOT NULL;
+CREATE INDEX molidx ON structures USING gist(m);
+```
