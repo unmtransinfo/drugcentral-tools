@@ -31,10 +31,5 @@ docker exec "${INAME_DB}_container" sudo -u postgres psql -d drugcentral -c "SEL
 DOCKERHOST="localhost"
 psql -h $DOCKERHOST -p 5433 -U drugman -l
 psql -h $DOCKERHOST -p 5433 -U drugman -d drugcentral -c "SELECT COUNT(DISTINCT smiles) FROM structures"
-#
-python3 -m BioClients.drugcentral.Client -h
-python3 -m BioClients.drugcentral.Client version \
-	--dbhost $DOCKERHOST --dbport 5433 --dbname drugcentral --dbusr drugman --dbpw dosage
-python3 -m BioClients.drugcentral.Client list_tables_rowCounts \
-	--dbhost $DOCKERHOST --dbport 5433 --dbname drugcentral --dbusr drugman --dbpw dosage
+psql -h $DOCKERHOST -p 5433 -U drugman -d drugcentral -c "SELECT name,smiles FROM structures WHERE RANDOM()<0.01 LIMIT 12"
 #
