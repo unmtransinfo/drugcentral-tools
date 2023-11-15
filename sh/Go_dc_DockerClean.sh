@@ -1,11 +1,6 @@
 #!/bin/bash
 ###
 #
-if [ $(whoami) != "root" ]; then
-	echo "${0} should be run as root or via sudo."
-	exit
-fi
-#
 INAME="drugcentral_db"
 CNAME="${INAME}_container"
 #
