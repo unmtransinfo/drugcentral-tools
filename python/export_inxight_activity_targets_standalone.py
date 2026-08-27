@@ -17,8 +17,6 @@ UniProt-enriched export:
 
 Smoke test:
     python export_inxight_activity_targets_standalone.py --limit-targets 1 --limit-substances 5
-
-    Contributed by: Jessica Maine, NCATS Informatics Core
 """
 
 from __future__ import annotations
@@ -60,6 +58,14 @@ ACTIVITY_TARGET_COLUMNS = [
     "substance_status",
     "substance_deprecated",
     "substance_url",
+    "fda_approval_status",
+    "fda_approval_year",
+    "fda_approved",
+    "fda_withdrawn",
+    "fda_approval_source_id",
+    "fda_approval_source_url",
+    "inxight_highest_phase",
+    "inxight_development_status_code",
     "substance_lookup_status",
     "substance_lookup_error",
     "raw_target_id",
@@ -117,6 +123,14 @@ DRUGCENTRAL_CANDIDATE_COLUMNS = [
     "unii",
     "drug_name",
     "drug_url",
+    "fda_approval_status",
+    "fda_approval_year",
+    "fda_approved",
+    "fda_withdrawn",
+    "fda_approval_source_id",
+    "fda_approval_source_url",
+    "inxight_highest_phase",
+    "inxight_development_status_code",
     "target_uniprot_id",
     "target_label",
     "target_gene_symbol",
@@ -388,6 +402,7 @@ class InxightActivityTargetExporter:
             "notes": [
                 "Rows are Inxight GUI Activity -> Targets annotations.",
                 "The DrugCentral candidate TSV is filtered to named UNII drugs with clean UniProtKB protein target IDs.",
+                "FDA approval status columns are parsed from the Inxight @additional Earliest Approved Event object.",
                 "DDI/victim/perpetrator/tox target annotations are excluded by filtering to @additional rows named 'Targets'.",
                 "UNII is used as the drug key. Rich substance metadata is optional; display names are fetched from the Inxight names endpoint by default.",
                 "Direct UniProt targets are retained in target_uniprot_id and become UniProtKB target IDs when there is a single accession.",
@@ -566,6 +581,7 @@ class InxightActivityTargetExporter:
         if not target_items:
             return [], []
         substance = self.substance(unii) if self.fetch_substance_details else {"_lookup_status": "not_requested"}
+        approval_status = self.approval_status_from_additional(additional)
 
         rows: list[dict[str, str]] = []
         edges: list[dict[str, str]] = []
@@ -582,6 +598,7 @@ class InxightActivityTargetExporter:
                 drug_label=drug_label,
                 substance=substance,
                 substance_url=substance_url,
+                approval_status=approval_status,
                 value=value,
                 target_facets=target_facets,
             )
@@ -612,6 +629,14 @@ class InxightActivityTargetExporter:
                 "unii": row.get("unii", ""),
                 "drug_name": drug_name,
                 "drug_url": row.get("substance_url", ""),
+                "fda_approval_status": row.get("fda_approval_status", ""),
+                "fda_approval_year": row.get("fda_approval_year", ""),
+                "fda_approved": row.get("fda_approved", ""),
+                "fda_withdrawn": row.get("fda_withdrawn", ""),
+                "fda_approval_source_id": row.get("fda_approval_source_id", ""),
+                "fda_approval_source_url": row.get("fda_approval_source_url", ""),
+                "inxight_highest_phase": row.get("inxight_highest_phase", ""),
+                "inxight_development_status_code": row.get("inxight_development_status_code", ""),
                 "target_uniprot_id": uniprot,
                 "target_label": row.get("target_label", ""),
                 "target_gene_symbol": row.get("target_gene_symbol", ""),
@@ -766,6 +791,45 @@ class InxightActivityTargetExporter:
                     return clean(item.get("name"))
         return ""
 
+    @classmethod
+    def approval_status_from_additional(cls, additional: list[dict[str, Any]]) -> dict[str, str]:
+        values: dict[str, Any] = {}
+        for item in additional:
+            if not isinstance(item, dict):
+                continue
+            name = clean(item.get("name"))
+            if name and name not in values:
+                values[name] = item.get("value")
+
+        earliest = cls.dict_value(values.get("Earliest Approved Event"))
+        highest_phase = cls.dict_value(values.get("Stitcher Highest Phase"))
+
+        return {
+            "fda_approval_status": clean(earliest.get("status")),
+            "fda_approval_year": clean(earliest.get("year") or values.get("Approval Year")),
+            "fda_approved": cls.bool_cell(earliest.get("approved")),
+            "fda_withdrawn": cls.bool_cell(earliest.get("withdrawn")),
+            "fda_approval_source_id": clean(earliest.get("sourceID")),
+            "fda_approval_source_url": clean(earliest.get("sourceURL")),
+            "inxight_highest_phase": clean(highest_phase.get("highestPhase")),
+            "inxight_development_status_code": clean(values.get("sDevelopment Status")),
+        }
+
+    @staticmethod
+    def dict_value(value: Any) -> dict[str, Any]:
+        return value if isinstance(value, dict) else {}
+
+    @staticmethod
+    def bool_cell(value: Any) -> str:
+        if isinstance(value, bool):
+            return "TRUE" if value else "FALSE"
+        text = clean(value)
+        if text.lower() in {"true", "1", "yes"}:
+            return "TRUE"
+        if text.lower() in {"false", "0", "no"}:
+            return "FALSE"
+        return text
+
     def flat_target_row(
         self,
         *,
@@ -774,6 +838,7 @@ class InxightActivityTargetExporter:
         drug_label: str,
         substance: dict[str, Any],
         substance_url: str,
+        approval_status: dict[str, str],
         value: dict[str, Any],
         target_facets: dict[str, int],
     ) -> dict[str, str]:
@@ -812,6 +877,14 @@ class InxightActivityTargetExporter:
             "substance_status": clean(substance.get("status")),
             "substance_deprecated": substance_deprecated,
             "substance_url": substance_url,
+            "fda_approval_status": approval_status.get("fda_approval_status", ""),
+            "fda_approval_year": approval_status.get("fda_approval_year", ""),
+            "fda_approved": approval_status.get("fda_approved", ""),
+            "fda_withdrawn": approval_status.get("fda_withdrawn", ""),
+            "fda_approval_source_id": approval_status.get("fda_approval_source_id", ""),
+            "fda_approval_source_url": approval_status.get("fda_approval_source_url", ""),
+            "inxight_highest_phase": approval_status.get("inxight_highest_phase", ""),
+            "inxight_development_status_code": approval_status.get("inxight_development_status_code", ""),
             "substance_lookup_status": substance_lookup_status,
             "substance_lookup_error": clean(substance.get("_lookup_error")),
             "raw_target_id": raw_target_id,
@@ -1135,6 +1208,12 @@ class InxightActivityTargetExporter:
             row for row in direct_uniprot_rows if "|" in row.get("target_uniprot_id", "")
         ]
         drugcentral_rows = self.drugcentral_candidate_rows(flat_rows)
+        drugcentral_candidate_uniis = {row.get("unii") for row in drugcentral_rows if row.get("unii")}
+        drugcentral_candidate_uniis_with_status = {
+            row.get("unii")
+            for row in drugcentral_rows
+            if row.get("unii") and row.get("fda_approval_status")
+        }
         flat_output_rows = [
             {col: tsv_cell(row.get(col, "")) for col in ACTIVITY_TARGET_COLUMNS}
             for row in flat_rows
@@ -1194,6 +1273,16 @@ class InxightActivityTargetExporter:
                 "unique_drugcentral_candidate_uniprots": len(
                     {row.get("target_uniprot_id") for row in drugcentral_rows if row.get("target_uniprot_id")}
                 ),
+                "drugcentral_candidate_rows_with_fda_approval_status": sum(
+                    1 for row in drugcentral_rows if row.get("fda_approval_status")
+                ),
+                "drugcentral_candidate_rows_missing_fda_approval_status": sum(
+                    1 for row in drugcentral_rows if not row.get("fda_approval_status")
+                ),
+                "unique_drugcentral_candidate_uniis_with_fda_approval_status": len(drugcentral_candidate_uniis_with_status),
+                "unique_drugcentral_candidate_uniis_missing_fda_approval_status": len(
+                    drugcentral_candidate_uniis - drugcentral_candidate_uniis_with_status
+                ),
                 "unique_drug_target_pairs": len({(row.get("unii"), row.get("target_id")) for row in flat_rows}),
                 "unique_drug_target_action_pairs": len({(row.get("unii"), row.get("target_id"), row.get("pharmacology")) for row in flat_rows}),
                 "unique_target_ids": len({row.get("target_id") for row in flat_rows if row.get("target_id")}),
@@ -1228,6 +1317,9 @@ class InxightActivityTargetExporter:
                 "drugcentral_candidate_all_uniprot_ids_valid": all(
                     bool(UNIPROT_ACCESSION_RE.match(row.get("target_uniprot_id", "")))
                     for row in drugcentral_rows
+                ),
+                "drugcentral_candidate_all_rows_have_fda_approval_status": all(
+                    bool(row.get("fda_approval_status")) for row in drugcentral_rows
                 ),
                 "invalid_unii_rows": sum(1 for row in flat_rows if row.get("unii") and not UNII_RE.match(row.get("unii", ""))),
                 "invalid_chembl_id_rows": sum(
@@ -1283,7 +1375,14 @@ class InxightActivityTargetExporter:
                 },
                 "missing_required_drugcentral_candidate_fields": {
                     col: sum(1 for row in drugcentral_rows if not row.get(col))
-                    for col in ["unii", "drug_name", "drug_url", "target_uniprot_id", "target_label"]
+                    for col in [
+                        "unii",
+                        "drug_name",
+                        "drug_url",
+                        "fda_approval_status",
+                        "target_uniprot_id",
+                        "target_label",
+                    ]
                 },
                 "candidate_missing_equals_additional_failures": completeness_check,
                 "duplicate_flat_relationship_evidence_keys": sum(count - 1 for count in row_keys.values() if count > 1),
@@ -1295,6 +1394,11 @@ class InxightActivityTargetExporter:
             "distributions": {
                 "target_category": dict(Counter(row.get("target_category") or "blank" for row in flat_rows).most_common()),
                 "target_source": dict(Counter(row.get("target_source") or "blank" for row in flat_rows).most_common()),
+                "fda_approval_status": dict(Counter(row.get("fda_approval_status") or "blank" for row in flat_rows).most_common()),
+                "drugcentral_fda_approval_status": dict(
+                    Counter(row.get("fda_approval_status") or "blank" for row in drugcentral_rows).most_common()
+                ),
+                "inxight_highest_phase": dict(Counter(row.get("inxight_highest_phase") or "blank" for row in flat_rows).most_common()),
                 "chembl_lookup_status": dict(Counter(row.get("chembl_lookup_status") or "blank" for row in chembl_rows).most_common()),
                 "chembl_target_type": dict(Counter(row.get("chembl_target_type") or "blank" for row in chembl_rows).most_common()),
                 "pharmacology": dict(Counter(row.get("pharmacology") or "blank" for row in flat_rows).most_common()),
@@ -1340,6 +1444,10 @@ class InxightActivityTargetExporter:
             "raw_rows_with_drug_name_fallback_to_unii",
             "unique_drugcentral_candidate_uniis",
             "unique_drugcentral_candidate_uniprots",
+            "drugcentral_candidate_rows_with_fda_approval_status",
+            "drugcentral_candidate_rows_missing_fda_approval_status",
+            "unique_drugcentral_candidate_uniis_with_fda_approval_status",
+            "unique_drugcentral_candidate_uniis_missing_fda_approval_status",
             "unique_drug_target_pairs",
             "unique_target_ids",
             "unique_target_labels",
@@ -1365,6 +1473,12 @@ class InxightActivityTargetExporter:
         lines.extend(["", "## ChEMBL Resolution"])
         for label, value in chembl_status.items():
             lines.append(f"- {label}: {value:,} ChEMBL-backed rows")
+        lines.extend(["", "## FDA / Development Status"])
+        for label, value in qc["distributions"]["drugcentral_fda_approval_status"].items():
+            lines.append(f"- DrugCentral candidates with `{label}`: {value:,}")
+        lines.extend(["", "## Inxight Highest Phase"])
+        for label, value in qc["distributions"]["inxight_highest_phase"].items():
+            lines.append(f"- {label}: {value:,} raw activity rows")
         lines.extend(["", "## Validations"])
         for key, value in validations.items():
             lines.append(f"- {key}: {value}")
