@@ -31,13 +31,15 @@ while [ $i_t -lt $n_table ]; do
 	tname=$(echo $TNAME |tr '[:upper:]' '[:lower:]')
 	printf "${i_t}: schema:${SNAME} table:${TNAME}\n"
 	ofile="${TMPDATADIR}/${tname}.csv"
-	if [ -e "$ofile" ]; then
-		if [ "$(cat $ofile |wc -l)" -gt 0 ]; then
-			printf "${ofile} exists and is NOT EMPTY; thus NOT RE-GENERATING.\n"
+	ofile_header="${TMPDATADIR}/${tname}_header.csv"
+	ofile_data="${TMPDATADIR}/${tname}_data.csv"
+	if [ -e "$ofile_data" ]; then
+		if [ "$(cat $ofile_data |wc -l)" -gt 0 ]; then
+			printf "${ofile_data} exists and is NOT EMPTY; thus NOT RE-GENERATING.\n"
 			continue
-		elif [ "$(cat $ofile |wc -l)" -eq 0 ]; then
-			printf "${ofile} exists and IS EMPTY; thus RE-GENERATING.\n"
-			rm -f $ofile
+		elif [ "$(cat $ofile_data |wc -l)" -eq 0 ]; then
+			printf "${ofile_data} exists and IS EMPTY; thus RE-GENERATING.\n"
+			rm -f $ofile_data
 		fi
 	fi
 	printf "Writing: ${ofile}\n"
@@ -46,8 +48,18 @@ while [ $i_t -lt $n_table ]; do
 		-dbdir $DBDIR -dbname db \
 		-dbschema $SNAME \
 		-dbtable $TNAME \
+		-list_columns \
+		|perl -pe 's/\n/,/g' |perl -pe 's/,$/\n/' \
+		>${ofile_header}
+	sleep 3 # Give Derby time to close the connection.
+	java -classpath ${UTIL_JARFILE} edu.unm.health.biocomp.util.db.derby_utils \
+		-v \
+		-dbdir $DBDIR -dbname db \
+		-dbschema $SNAME \
+		-dbtable $TNAME \
 		-export_table \
-		-o ${ofile}
+		-o ${ofile_data}
+	cat ${ofile_header} ${ofile_data} >${ofile}
 	sleep 3 # Give Derby time to close the connection.
 done
 #
