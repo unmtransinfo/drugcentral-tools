@@ -1,0 +1,229 @@
+---
+title: "DrugCentral database"
+author: "UNM TID"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(flexdashboard)
+library(RJDBC)
+library(data.table)
+library(ggplot2)
+library(plotly)
+library(knitr)
+library(kableExtra)
+library(ggiraph)
+
+options(knitr.table.format = "html")
+
+drv <- JDBC(driverClass = "org.apache.derby.jdbc.EmbeddedDriver", classPath = "/home/gonzo/data/03_drugdb/derby-10.14.2.0.jar", identifier.quote="\"")
+conn <- dbConnect(drv, "jdbc:derby:/home/gonzo/data/03_drugdb/dc2026Q2ab/drugdb/.config/localdb/db")
+#drv <- JDBC("org.apache.derby.jdbc.EmbeddedDriver",
+#            "/home/oleg/.m2/repository/org/apache/derby/derby/10.14.2.0/derby-10.14.2.0.jar",
+#            identifier.quote="\"")
+#conn <- dbConnect(drv, "jdbc:derby:/home/cbologa/work/idg/drugdb/.config/localdb/db")
+
+struct.tbl <- dbGetQuery(conn, "SELECT ID STRUCT_ID,NAME FROM STRUCTURES")
+setDT(struct.tbl)
+struct.type.tbl <- dbGetQuery(conn, "SELECT STRUCT_ID,TYPE FROM STRUCTURE_TYPE")
+setDT(struct.type.tbl)
+approval.tbl <- dbGetQuery(conn, "SELECT STRUCT_ID,APPROVAL FROM APPROVAL WHERE TYPE = 'FDA' AND APPROVAL IS NOT NULL")
+setDT(approval.tbl)
+label.tbl <- dbGetQuery(conn, "SELECT LABEL.ID,CATEGORY,STRUCT_ID FROM LABEL,PRD2LABEL,ACTIVE_INGREDIENT WHERE LABEL.ID=PRD2LABEL.LABEL_ID AND PRD2LABEL.NDC_PRODUCT_CODE=ACTIVE_INGREDIENT.NDC_PRODUCT_CODE")
+setDT(label.tbl)
+label.tbl[CATEGORY == "HUMAN PRESCRIPTION DRUG LABEL WITH HIGHLIGHTS", CATEGORY := "HUMAN PRESCRIPTION DRUG LABEL"]
+target.class.tbl <- dbGetQuery(conn, "SELECT TARGET_CLASS,COUNT(DISTINCT STRUCT_ID) DRUG_COUNT FROM ACTIVITIES,TARGET_DICTIONARY WHERE MOA = 1 AND  ACTIVITIES.TARGET_ID = TARGET_DICTIONARY.ID AND PROTEIN_COMPONENTS > 0 GROUP BY (TARGET_CLASS)")
+setDT(target.class.tbl)
+active.ingredient.tbl <- dbGetQuery(conn, "SELECT * FROM ACTIVE_INGREDIENT")
+setDT(active.ingredient.tbl)
+moa.target.tbl <- dbGetQuery(conn, "SELECT DISTINCT STRUCT_ID,ACCESSION,TARGET_DICTIONARY.TARGET_CLASS FROM ACTIVITIES,TD2TC,TARGET_COMPONENT,TARGET_DICTIONARY WHERE ACTIVITIES.TARGET_ID=TARGET_DICTIONARY.ID AND ACTIVITIES.TARGET_ID=TD2TC.TARGET_ID AND TD2TC.COMPONENT_ID=TARGET_COMPONENT.ID AND ACTIVITIES.MOA = 1 AND ORGANISM = 'Homo sapiens'")
+setDT(moa.target.tbl)
+ob.exclusiv.tbl <- dbGetQuery(conn, "select STRUCTURES.NAME,STRUCT2OBPROD.STRUCT_ID,OB_PRODUCT.APPL_NO,OB_PRODUCT.APPL_TYPE,STRUCT2OBPROD.STRENGTH,OB_PRODUCT.INGREDIENT,OB_PRODUCT.TRADE_NAME,OB_PRODUCT.APPLICANT,
+  OB_PRODUCT.APPROVAL_DATE,OB_PRODUCT.TYPE,OB_PRODUCT.RLD,OB_PRODUCT.PRODUCT_NO,
+  OB_EXCLUSIVITY.EXCLUSIVITY_CODE,OB_EXCLUSIVITY.EXCLUSIVITY_DATE,
+  OB_EXCLUSIVITY_CODE.DESCRIPTION
+from STRUCTURES,STRUCT2OBPROD,OB_PRODUCT,OB_EXCLUSIVITY,OB_EXCLUSIVITY_CODE
+where STRUCTURES.ID=STRUCT2OBPROD.STRUCT_ID AND STRUCT2OBPROD.PROD_ID = OB_PRODUCT.ID and OB_PRODUCT.APPL_NO = OB_EXCLUSIVITY.APPL_NO and OB_PRODUCT.PRODUCT_NO = OB_EXCLUSIVITY.PRODUCT_NO
+and OB_EXCLUSIVITY.EXCLUSIVITY_CODE = OB_EXCLUSIVITY_CODE.CODE")
+setDT(ob.exclusiv.tbl)
+ob.exclusiv.tbl[, APPROVAL_DATE := as.IDate(APPROVAL_DATE)]
+ob.exclusiv.tbl[, EXCLUSIVITY_DATE := as.IDate(EXCLUSIVITY_DATE)]
+ob.exclusiv.tbl[, OB_URL := sprintf("<a href=\"https://www.accessdata.fda.gov/scripts/cder/ob/patent_info.cfm?Product_No=%s&Appl_No=%s&Appl_type=%s\" target=\"_blank\">%s%s</a>",PRODUCT_NO, APPL_NO, APPL_TYPE, APPL_TYPE,APPL_NO)]
+ob.exclusiv.tbl[, DRUGCENTRAL_URL := sprintf("<a href=\"http://drugcentral.org/drugcard/%d\" target=\"_blank\">%s</a>", STRUCT_ID, NAME)]
+setorder(ob.exclusiv.tbl, EXCLUSIVITY_DATE, STRUCT_ID)
+
+
+ob.patent.tbl <- dbGetQuery(conn, "select STRUCTURES.NAME,STRUCT2OBPROD.STRUCT_ID,OB_PRODUCT.APPL_NO,OB_PRODUCT.APPL_TYPE,STRUCT2OBPROD.STRENGTH,OB_PRODUCT.INGREDIENT,OB_PRODUCT.TRADE_NAME,OB_PRODUCT.APPLICANT,
+  OB_PRODUCT.APPROVAL_DATE,OB_PRODUCT.TYPE,OB_PRODUCT.RLD,OB_PRODUCT.PRODUCT_NO,
+  OB_PATENT.PATENT_USE_CODE,OB_PATENT.PATENT_EXPIRE_DATE,
+  OB_PATENT_USE_CODE.DESCRIPTION
+from STRUCTURES,STRUCT2OBPROD,OB_PRODUCT,OB_PATENT,OB_PATENT_USE_CODE
+where STRUCTURES.ID=STRUCT2OBPROD.STRUCT_ID AND STRUCT2OBPROD.PROD_ID = OB_PRODUCT.ID and OB_PRODUCT.APPL_NO = OB_PATENT.APPL_NO and OB_PRODUCT.PRODUCT_NO = OB_PATENT.PRODUCT_NO
+and OB_PATENT.PATENT_USE_CODE = OB_PATENT_USE_CODE.CODE")
+setDT(ob.patent.tbl)
+ob.patent.tbl[, APPROVAL_DATE := as.IDate(APPROVAL_DATE)]
+ob.patent.tbl[, PATENT_EXPIRE_DATE := as.IDate(PATENT_EXPIRE_DATE)]
+ob.patent.tbl[, OB_URL := sprintf("<a href=\"https://www.accessdata.fda.gov/scripts/cder/ob/patent_info.cfm?Product_No=%s&Appl_No=%s&Appl_type=%s\" target=\"_blank\">%s%s</a>",PRODUCT_NO, APPL_NO, APPL_TYPE, APPL_TYPE,APPL_NO)]
+ob.patent.tbl[, DRUGCENTRAL_URL := sprintf("<a href=\"http://drugcentral.org/drugcard/%d\" target=\"_blank\">%s</a>", STRUCT_ID, NAME)]
+setorder(ob.patent.tbl, PATENT_EXPIRE_DATE, STRUCT_ID)
+
+
+
+dbDisconnect(conn)
+dbUnloadDriver(drv)
+rm(drv, conn)
+
+summ.tbl <- data.table(Entity = "Active Ingredients", Count = struct.tbl[, .N])
+struct.type.summ.tbl <- copy(struct.type.tbl)
+struct.type.summ.tbl[TYPE == "ORGANIC", TYPE := "Small molecule"]
+struct.type.summ.tbl[TYPE %chin% c("PEPTIDE", "MONOCLONAL ANTIBODY", "PROTEIN", "ENZYME", "FUSION PROTEIN", "OLIGONUCLEOTIDE", "ANTIBODY-DRUG CONJUGATE", "VIRUS"), TYPE := "Biologic"]
+struct.type.summ.tbl[!TYPE %chin% c("Small molecule", "Biologic"), TYPE := "Other"]
+struct.type.summ.tbl <- unique(struct.type.summ.tbl, by="STRUCT_ID")
+struct.type.summ.tbl <- struct.type.summ.tbl[, .(N = uniqueN(STRUCT_ID)), by = TYPE]
+struct.type.summ.tbl[TYPE == "Small molecule", TYPE := "[Small molecule](https://en.wikipedia.org/wiki/Small_molecule){target=\"_blank\"}"]
+struct.type.summ.tbl[TYPE == "Biologic", TYPE := "[Biologic](https://en.wikipedia.org/wiki/Biopharmaceutical){target=\"_blank\"}"]
+for(i in 1:nrow(struct.type.summ.tbl)) {
+  summ.tbl <- rbindlist(list(summ.tbl, data.table(Entity = struct.type.summ.tbl[i, TYPE], Count = struct.type.summ.tbl[i, N])))
+}
+
+summ.tbl <- rbindlist(list(summ.tbl, data.table(Entity = "[FDA drug labels](https://dailymed.nlm.nih.gov){target=\"_blank\"}", Count = label.tbl[, uniqueN(ID)])))
+summ.tbl <- rbindlist(list(summ.tbl, data.table(Entity = "Rx drug labels", Count = label.tbl[CATEGORY == "HUMAN PRESCRIPTION DRUG LABEL", uniqueN(ID)])))
+summ.tbl <- rbindlist(list(summ.tbl, data.table(Entity = "OTC drug labels", Count = label.tbl[CATEGORY == "HUMAN OTC DRUG LABEL", uniqueN(ID)])))
+summ.tbl <- rbindlist(list(summ.tbl, data.table(Entity = "Pharmaceutical formulations in [FDA drug labels](https://dailymed.nlm.nih.gov){target=\"_blank\"}", Count = active.ingredient.tbl[, uniqueN(NDC_PRODUCT_CODE)])))
+```
+
+#### Summary for [DrugCentral database](http://drugcentral.org){target="_blank"}.
+***
+
+```{r summary_table, echo=F}
+kable(summ.tbl, format.args = list(big.mark = ",")) %>% kable_styling(position = "center", font_size = 14, bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>% column_spec(1, bold = T) %>% add_indent(c(2,3,4,6,7))
+```
+***
+
+#### Food and Drug Administration drug approvals by year, [New Molecular Entities](https://www.fda.gov/drugs/developmentapprovalprocess/druginnovation/ucm20025676.htm){target="_blank"} (NME) only.
+
+
+```{r approval, echo=F, fig.align="center", out.width="100%", warning=F}
+tbl <- merge(approval.tbl, struct.type.tbl, by.x = "STRUCT_ID", by.y = "STRUCT_ID")
+tbl <- unique(tbl, by = "STRUCT_ID")
+tbl[, YEAR := year(APPROVAL)]
+tbl[TYPE != "ORGANIC", TYPE := "OTHER"]
+tbl[, TYPE := factor(x = TYPE, levels = c("ORGANIC", "OTHER"), labels = c("small molecule", "biologic or other"), ordered = T)]
+tbl.lbl <- tbl[, .N, by = .(YEAR, TYPE)]
+tbl.lbl <- dcast(tbl.lbl, YEAR ~ TYPE, value.var = "N", fun.aggregate = mean, fill = 0)
+labels <- sprintf("Year: %d; NME: %d, small molecule: %d; biologic or other: %d", tbl.lbl$YEAR, tbl.lbl$`small molecule`+tbl.lbl$`biologic or other`, tbl.lbl$`small molecule`, tbl.lbl$`biologic or other`)
+#plot <- ggplot(data = tbl, aes(x = YEAR)) + geom_histogram(aes(color = TYPE, fill = TYPE), bins = tbl[, uniqueN(YEAR)], alpha = 0.5) + theme_classic() + scale_x_continuous(breaks = seq(tbl[, min(YEAR)], tbl[, max(YEAR)], 4)) + theme(plot.title = element_text(hjust = 0.5), legend.title=element_blank()) + labs(title = "FDA drug approvals by year", x = "Year", y = "New Molecular Entities") + theme(legend.position = "top", axis.text = element_text(size = 7)) + scale_fill_manual(values = c("#1E90FF", "#FF8C00")) + scale_color_manual(values = c("#1E90FF", "#FF8C00"))
+tbl <- tbl[, .(NME = .N), by = .(YEAR, TYPE)]
+tbl[, label := sprintf("Year: %d\n%s: %d", YEAR, TYPE, NME)]
+plot <- ggplot(data = tbl, aes(x = YEAR, y = NME, tooltip = label)) + geom_bar_interactive(aes(fill = TYPE), width = 0.8, stat = "identity") + theme_classic() + scale_x_continuous(breaks = seq(tbl[, min(YEAR)], tbl[, max(YEAR)], 4)) + theme(plot.title = element_text(hjust = 0.5), legend.title=element_blank()) + labs(title = "FDA drug approvals by year", x = "Year", y = "New Molecular Entities") + theme(legend.position = "top", axis.text = element_text(size = 7)) + scale_fill_manual(values = c("#1E90FF", "#FF8C00")) + scale_color_manual(values = c("#1E90FF", "#FF8C00"))
+#plot <- ggplotly(plot, tooltip = c("x", "y", "fill"))
+#plot %>% layout(legend = list(orientation = "h"))
+#ggiraph(code = print(plot), width = 1, hover_css = "fill-opacity:.3;background-color:gray;color:white;")
+ggiraph::girafe(
+    ggobj = plot,
+    options = list(
+        ggiraph::opts_hover(
+            css = "fill-opacity:.3;background-color:gray;color:white;"
+        )
+    )
+)
+
+```
+
+***
+
+#### FDA marketed formulations including [unapproved drugs](https://www.fda.gov/AboutFDA/Transparency/Basics/ucm213030.htm){target="_blank"}.
+
+
+```{r formulations, echo=F, fig.align="center", out.width="100%", warning=F}
+label.pie1.tbl <- label.tbl[, .(COUNT = uniqueN(ID)), by = CATEGORY]
+label.pie1.tbl[CATEGORY == "HUMAN PRESCRIPTION DRUG LABEL", CATEGORY := "Rx"]
+label.pie1.tbl[CATEGORY == "HUMAN OTC DRUG LABEL", CATEGORY := "OTC"]
+
+otc.struct.id <- label.tbl[CATEGORY == "HUMAN OTC DRUG LABEL", unique(STRUCT_ID)]
+label.tbl <- label.tbl[!(CATEGORY == "HUMAN PRESCRIPTION DRUG LABEL" & STRUCT_ID %in% otc.struct.id)]
+label.pie2.tbl <- label.tbl[, .(COUNT = uniqueN(STRUCT_ID)), by = CATEGORY]
+label.pie2.tbl[CATEGORY == "HUMAN PRESCRIPTION DRUG LABEL", CATEGORY := "Rx"]
+label.pie2.tbl[CATEGORY == "HUMAN OTC DRUG LABEL", CATEGORY := "OTC"]
+
+
+p1 <- plot_ly() %>% add_pie(data = label.pie1.tbl, labels = ~CATEGORY, values = ~COUNT, textinfo = "label + percent", insidetextfont = list(color = '#FFFFFF'), hoverinfo = 'text', marker = list(colors = colors, line = list(color = '#FFFFFF', width = 1)), text = ~sprintf("%s %s", CATEGORY, "FDA formulations"), showlegend = FALSE, domain = list(x = c(0, 0.49), y = c(0, 1)), textposition = "auto") %>% layout(annotations = list(text = "Rx and OTC formulations", xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+p2 <- plot_ly() %>% add_pie(data = label.pie2.tbl, labels = ~CATEGORY, values = ~COUNT, textinfo = "label + percent", insidetextfont = list(color = '#FFFFFF'), hoverinfo = 'text', marker = list(colors = colors, line = list(color = '#FFFFFF', width = 1)), text = ~sprintf("%s %s", CATEGORY, "active ingredients"), showlegend = FALSE, domain = list(x = c(0.51, 1), y = c(0, 1)), textposition = "auto") %>% layout(annotations = list(text = "Active ingredients in Rx and OTC formulations", xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+subplot(p1, p2) %>% layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE), yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE), font = list(size = 12), margin=list(l = 5, r = 5, t = 40, b = 5))
+```
+
+***
+
+#### [Drug efficacy targets](https://doi.org/10.1038/nrd.2016.230){target="_blank"} summary by target class.
+
+```{r moa, echo=F, fig.align="center", warning=F, out.width="100%"}
+moa.target.tbl[TARGET_CLASS == "Membrane receptor", TARGET_CLASS := "Membrane\nreceptor"]
+top.targets <- moa.target.tbl[, .(COUNT = uniqueN(STRUCT_ID)), by = TARGET_CLASS][order(-COUNT)][1:6, TARGET_CLASS]
+drugs.stat <- copy(moa.target.tbl)
+drugs.stat[!TARGET_CLASS %chin% top.targets, TARGET_CLASS := "Other"]
+drugs.stat <- drugs.stat[, .(COUNT = uniqueN(STRUCT_ID)), by = TARGET_CLASS][order(-COUNT)]
+
+top.targets <- moa.target.tbl[, .(COUNT = uniqueN(ACCESSION)), by = TARGET_CLASS][order(-COUNT)][1:6, TARGET_CLASS]
+target.stat <- copy(moa.target.tbl)
+target.stat[!TARGET_CLASS %chin% top.targets, TARGET_CLASS := "Other"]
+target.stat <- target.stat[, .(COUNT = uniqueN(ACCESSION)), by = TARGET_CLASS][order(-COUNT)]
+p1 <- plot_ly() %>% add_pie(data = drugs.stat, labels = ~TARGET_CLASS, values = ~COUNT, type = 'pie', textinfo = 'label+percent', name = "Drugs",
+          domain = list(x = c(0, 0.49), y = c(0, 1)), textposition = "auto") %>% layout(annotations = list(text = "Drug distribution", xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+p2 <- plot_ly() %>% add_pie(data = target.stat, labels = ~TARGET_CLASS, values = ~COUNT, type = 'pie', textinfo = 'label+percent', name = "Targets", domain = list(x = c(0.51, 1), y = c(0, 1)), textposition = "auto") %>% layout(annotations = list(text = "Target distribution", xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+subplot(p1, p2) %>% layout(font = list(size = 12), showlegend = F,
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE), margin=list(l = 5, r = 5, t = 40, b = 5))
+```
+
+***
+
+### [FDA Orange Book](https://www.accessdata.fda.gov/scripts/cder/ob/index.cfm){target="_blank"} market exclusivity data
+```{r ob_exclusiv, echo=F, fig.align="center", warning=F, out.width="100%"}
+curr.year <- year(Sys.Date())
+ob.exclusiv.tbl[, YEAR := year(EXCLUSIVITY_DATE)]
+tbl <- ob.exclusiv.tbl[, .(EXPIR = uniqueN(APPL_NO)), by = YEAR]
+tbl <- tbl[YEAR >= curr.year]
+tbl[, label := sprintf("Applications: %d", EXPIR)]
+plot <- ggplot(data = tbl, aes(x = YEAR, y = EXPIR, tooltip = label)) + geom_bar_interactive(width = 0.8, stat = "identity", color = "#1E90FF", fill = "#1E90FF") + theme_classic() + theme(plot.title = element_text(hjust = 0.5)) + labs(title = "FDA Orange Book Market exclusivity expirations", x = "Year", y = "Applications") + theme(legend.position = "none", axis.text = element_text(size = 7)) + scale_x_continuous(breaks = seq(tbl[, min(YEAR)], tbl[, max(YEAR)], 1))
+#ggiraph(code = print(plot), width = 1, hover_css = "fill-opacity:.3;background-color:gray;color:white;")
+ggiraph::girafe(
+    ggobj = plot,
+    options = list(
+        ggiraph::opts_hover(
+            css = "fill-opacity:.3;background-color:gray;color:white;"
+        )
+    )
+)
+DT::datatable(ob.exclusiv.tbl[, .(DRUGCENTRAL_URL, TRADE_NAME, STRENGTH, APPLICANT, EXCLUSIVITY_DATE, OB_URL)],
+              rownames = F, selection = "single", class = "compact cell-border stripe", style = "bootstrap", escape = c(-1,-6),
+              colnames = c("Active ingredient", "Trade name", "Strength", "Applicant", "Exclusivity expiration", "Orange Book"))
+```
+
+***
+
+
+### [FDA Orange Book](https://www.accessdata.fda.gov/scripts/cder/ob/index.cfm){target="_blank"} patent data
+```{r ob_patent, echo=F, fig.align="center", warning=F, out.width="100%"}
+ob.patent.tbl[, YEAR := year(PATENT_EXPIRE_DATE)]
+tbl <- ob.patent.tbl[, .(EXPIR = uniqueN(APPL_NO)), by = YEAR]
+tbl <- tbl[YEAR >= curr.year]
+tbl[, label := sprintf("Patents: %d", EXPIR)]
+plot <- ggplot(data = tbl, aes(x = YEAR, y = EXPIR, tooltip = label)) + geom_bar_interactive(width = 0.8, stat = "identity", color = "#1E90FF", fill = "#1E90FF") + theme_classic() + theme(plot.title = element_text(hjust = 0.5)) + labs(title = "FDA Orange Book Patent expirations", x = "Year", y = "Patents") + theme(legend.position = "none", axis.text = element_text(size = 7)) + scale_x_continuous(breaks = seq(tbl[, min(YEAR)], tbl[, max(YEAR)], 1))
+#ggiraph(code = print(plot), width = 1, hover_css = "fill-opacity:.3;background-color:gray;color:white;")
+ggiraph::girafe(
+    ggobj = plot,
+    options = list(
+        ggiraph::opts_hover(
+            css = "fill-opacity:.3;background-color:gray;color:white;"
+        )
+    )
+)
+DT::datatable(ob.patent.tbl[, .(DRUGCENTRAL_URL, TRADE_NAME, STRENGTH, APPLICANT, PATENT_EXPIRE_DATE, OB_URL)],
+              rownames = F, selection = "single", class = "compact cell-border stripe", style = "bootstrap", escape = c(-1,-6),
+              colnames = c("Active ingredient", "Trade name", "Strength", "Applicant", "Patent expiration", "Orange Book"))
+# use for RowGroup DT::datatable(iris, extensions = 'RowGroup', options = list(rowGroup=list(dataSrc=5)))
+```
+
+***
